@@ -21,14 +21,13 @@ Frontend
 * Authorization (UI + server connection + JWT + error handling);
 * Menu (UI with “create/load” buttons);
 * Editor (UI + ...);
-* Profile (UI) [optional]
 
 Backend
 
-* Server (actix_web crate);
-* DB and pool connections (sqlx crate);
-* Auth with JWT (jsonwebtoken crate);
-* Error handling (thiserror crate);
+* Server;
+* DB and pool connections;
+* Auth with JWT;
+* Error handling;
 * API architecture;
 * Synchronous editor.
 
