@@ -38,5 +38,5 @@ Backend
 
 ## 👨‍💻 Authors
 **Rostyslav Kashper and Mariia Kaduk**  
-GitHub: _[FantRS](https://github.com/FantRS)_and [MashaKaduk](https://github.com/MashaKaduk)
+GitHub: [FantRS](https://github.com/FantRS) and [MashaKaduk](https://github.com/MashaKaduk)
 
