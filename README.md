@@ -29,7 +29,7 @@ Backend
 * Auth with JWT;
 * Error handling;
 * API architecture;
-* Synchronous editor.
+* Editor with real-time changes.
 
 <br>
 
