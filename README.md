@@ -38,7 +38,7 @@ Backend
 
 <br>
 
-### Database table
+### Database tables
 
 `users` table
 ```sql
