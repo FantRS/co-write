@@ -18,9 +18,9 @@ users, and changes are visible in real time. Simple authorization is provided.
 ### Scope of work
 Frontend
 
-* Authorization (UI + server connection + JWT + error handling);
-* Menu (UI with “create/load” buttons);
-* Editor (UI + ...);
+* Authorization;
+* Menu;
+* Editor.
 
 Backend
 
