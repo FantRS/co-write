@@ -29,7 +29,7 @@ Backend
 * Auth with JWT (using `bcript` and `jsonwebtoken`);
 * Error handling (using `thiserror` and `anyhow`);
 * Layered API architecture;
-* Editing with real-time changes (using `CRDT`).
+* Editing with real-time changes (using `CRDT` and WebSocket).
 
 <br>
 
