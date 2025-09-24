@@ -24,12 +24,12 @@ Frontend
 
 Backend
 
-* Server;
-* DB and pool connections;
-* Auth with JWT;
-* Error handling;
-* API architecture;
-* Editor with real-time changes.
+* Server (using `actix_web`);
+* DB and pool connections (using `sqlx` and `PostgreSQL`);
+* Auth with JWT (using `bcript` and `jsonwebtoken`);
+* Error handling (using `thiserror` and `anyhow`);
+* Layered API architecture;
+* Editing with real-time changes (using `CRDT`).
 
 <br>
 
@@ -44,9 +44,9 @@ Backend
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_name TEXT UNIQUE NOT NULL,
+    user_name VARCHAR(50) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
 
@@ -55,9 +55,9 @@ CREATE TABLE users (
 CREATE TABLE projects (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    project_name TEXT NOT NULL,
+    project_name VARCHAR(50) NOT NULL,
     description TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
 
@@ -66,20 +66,20 @@ CREATE TABLE projects (
 CREATE TABLE files (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    file_name TEXT NOT NULL,
+    file_name VARCHAR(50) NOT NULL,
     content TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
-    updated_at TIMESTAMP NOT NULL
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
 
 `roles` table
 ```sql
 CREATE TABLE roles (
-    slug TEXT PRIMARY KEY,
-    role_name TEXT UNIQUE NOT NULL,
+    slug VARCHAR(100) PRIMARY KEY,
+    role_name VARCHAR(50) UNIQUE NOT NULL,
     description TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 ```
 
@@ -87,9 +87,9 @@ CREATE TABLE roles (
 ```sql
 CREATE TABLE members (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_slug TEXT NOT NULL REFERENCES roles(slug) ON DELETE CASCADE,
+    role_slug VARCHAR(100) NOT NULL REFERENCES roles(slug) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT members_pk PRIMARY KEY (user_id, role_slug, project_id)
 );
 ```
