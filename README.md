@@ -79,7 +79,7 @@ CREATE TABLE roles (
     slug TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     description TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    created_at TIMESTAMP NOT NULL DEFAULT now()
 );
 ```
 
@@ -90,6 +90,7 @@ CREATE TABLE members (
     role_slug TEXT NOT NULL REFERENCES roles(slug) ON DELETE CASCADE,
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
+    CONSTRAINT members_pk PRIMARY KEY (user_id, role_slug, project_id)
 );
 ```
 
