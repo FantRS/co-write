@@ -38,59 +38,39 @@ Backend
 
 <br>
 
+### Q&A
+
+Q: How will the file content be segmented for parallelization?<br>
+A: With CRDT, segmentation occurs character by character because each character is assigned an ID.
+
+Q: How to resolve an attempt to edit the same place?<br>
+A: CRDT uses its own algorithms that automatically resolve conflicts.
+
+Q: How and in what form will the intermediate content of the file be stored while the editing session is in progress?<br>
+A: Server as a repeater and storage device. The server stores the ‘current state of the document’ in memory. 
+At the same time, the server keeps an event log in the database.
+
+<br>
+
 ### Database tables
 
-`users` table
+`users` documents
 ```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_name VARCHAR(50) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE TABLE documents (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  title TEXT NOT NULL,
+  state BYTEA NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
 );
 ```
 
-`projects` table
+`projects` document_updates
 ```sql
-CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    project_name VARCHAR(50) NOT NULL,
-    description TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-```
-
-`files` table
-```sql
-CREATE TABLE files (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    file_name VARCHAR(50) NOT NULL,
-    content TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-```
-
-`roles` table
-```sql
-CREATE TABLE roles (
-    slug VARCHAR(100) PRIMARY KEY,
-    role_name VARCHAR(50) UNIQUE NOT NULL,
-    description TEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-```
-
-`members` table
-```sql
-CREATE TABLE members (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_slug VARCHAR(100) NOT NULL REFERENCES roles(slug) ON DELETE CASCADE,
-    project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT members_pk PRIMARY KEY (user_id, role_slug, project_id)
+CREATE TABLE document_updates (
+  id UUID PRIMARY KEY uuid_generate_v4(),
+  document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+  update BYTEA NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
 );
 ```
 
