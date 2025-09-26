@@ -54,7 +54,7 @@ At the same time, the server keeps an event log in the database.
 
 ### Database tables
 
-`users` documents
+`documents` table
 ```sql
 CREATE TABLE documents (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -64,7 +64,7 @@ CREATE TABLE documents (
 );
 ```
 
-`projects` document_updates
+`document_updates` table
 ```sql
 CREATE TABLE document_updates (
   id UUID PRIMARY KEY uuid_generate_v4(),
