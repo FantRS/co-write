@@ -79,4 +79,3 @@ CREATE TABLE document_updates (
 ### 👨‍💻 Authors
 **Rostyslav Kashper and Mariia Kaduk**  
 GitHub: [FantRS](https://github.com/FantRS) and [MashaKaduk](https://github.com/MashaKaduk)
-
