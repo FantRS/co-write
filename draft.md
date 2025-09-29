@@ -2,7 +2,7 @@
 
 ## 1. Архітектура проєкту
 
-* **Frontend (React/Next.js або інший SPA)**
+* **Frontend**
 
 - Авторизація (JWT + localStorage/cookies).
 - Інтерфейс для редагування тексту.
@@ -20,24 +20,25 @@
 
   - Таблиця `documents` для зберігання стану (snapshot).
 
-  ```
+```
 CREATE TABLE documents (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,
     state BYTEA NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-  ```
+```
 
   - Таблиця `document_updates` для зберігання логів змін.
-  ```
+  
+```
 CREATE TABLE document_updates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     document_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     update BYTEA NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-  ```
+```
 
 
 
