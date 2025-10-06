@@ -1587,7 +1587,9 @@ dependencies = [
  "actix-cors",
  "actix-web",
  "chrono",
+ "dotenvy",
  "sqlx",
+ "thiserror",
  "tokio",
  "uuid",
 ]

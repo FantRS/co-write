@@ -11,3 +11,5 @@ actix-web = "4.11.0"
 sqlx = { version = "0.8.6", features = ["chrono", "postgres", "uuid"] }
 uuid = "1.18.1"
 chrono = "0.4.42"
+dotenvy = "0.15.7"
+thiserror = "2.0.17"
