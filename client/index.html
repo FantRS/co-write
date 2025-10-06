@@ -1,9 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>sync-redactor</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Lobby — CRDT Docs</title>
+        <link rel="stylesheet" href="styles.css" />
     </head>
-    <body></body>
+    <body>
+        <main class="container">
+            <header class="header">
+                <h1 class="brand">Co-Write</h1>
+                <p class="tag">Мінімалістичний редактор з синхронізацією</p>
+            </header>
+
+            <section class="cards">
+                <article class="card">
+                    <h2>Створити документ</h2>
+                    <label class="field">
+                        <span class="label">Назва документу</span>
+                        <input
+                            id="docName"
+                            type="text"
+                            placeholder="Нова Заява або My Notes"
+                            maxlength="120"
+                        />
+                    </label>
+                    <div class="row">
+                        <button id="createBtn" class="btn primary">
+                            Створити
+                        </button>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <h2>Приєднатися по посиланню</h2>
+                    <label class="field">
+                        <span class="label">Посилання</span>
+                        <input
+                            id="joinLink"
+                            type="url"
+                            placeholder="https://app.example.com/doc/abcd"
+                        />
+                    </label>
+                    <div class="row">
+                        <button id="joinBtn" class="btn primary">
+                            Приєднатися
+                        </button>
+                    </div>
+                </article>
+            </section>
+
+            <footer class="footer">
+                <small
+                    >Працює з CRDT — WebSocket / WebRTC для реальної
+                    синхронізації.</small
+                >
+            </footer>
+        </main>
+
+        <div id="toast" class="toast" aria-live="polite" hidden></div>
+
+        <script src="app.js" defer></script>
+    </body>
 </html>
