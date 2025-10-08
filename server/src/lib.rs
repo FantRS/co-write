@@ -3,6 +3,8 @@ pub mod app_data;
 pub mod app_error;
 pub mod extensions;
 
+use std::net::TcpListener;
+
 use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
 use sqlx::{PgPool, postgres::PgPoolOptions};
@@ -10,7 +12,7 @@ use sqlx::{PgPool, postgres::PgPoolOptions};
 use app_data::AppData;
 use app_error::{AppError, AppResult};
 
-pub async fn run() -> AppResult<()> {
+pub async fn run(lst: TcpListener) -> AppResult<()> {
     let database_url = std::env::var("DATABASE_URL")?;
 
     let pool = establish_connection(database_url).await?;
@@ -21,7 +23,7 @@ pub async fn run() -> AppResult<()> {
             .wrap(Cors::permissive())
             .app_data(web::Data::new(app_data.clone()))
     })
-    .bind(("127.0.0.1", 8080))?
+    .listen(lst)?
     .run()
     .await?;
 

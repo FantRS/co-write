@@ -19,7 +19,7 @@ createBtn.addEventListener("click", async () => {
     }
 
     const fakeId = Math.random().toString(36).slice(2, 10);
-    const docUrl = `${location.origin}/doc/${fakeId}`;
+    const docUrl = `${location.origin}/documents/${fakeId}`;
 
     showToast("Документ створено — перенаправлення...");
     setTimeout(() => {
