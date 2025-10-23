@@ -96,3 +96,9 @@ impl From<std::io::Error> for AppError {
         Self::InternalServerError
     }
 }
+
+impl From<uuid::Error> for AppError {
+    fn from(_: uuid::Error) -> Self {
+        Self::BadRequest
+    }
+}
