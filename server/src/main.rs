@@ -1,25 +1,22 @@
-use std::{net::TcpListener, process::ExitCode};
+use std::{env, net::TcpListener};
+
+use server::core::{app_data::AppData, app_error::AppResult, database};
 
 #[tokio::main]
-async fn main() -> ExitCode {
+async fn main() -> AppResult<()> {
     dotenvy::dotenv().ok();
 
-    let host: String = std::env::var("HOST").unwrap();
-    let port: String = std::env::var("PORT").unwrap();
+    let host: String = env::var("SERVER_HOST")?;
+    let port: String = env::var("SERVER_PORT")?;
 
     let addr = format!("{host}:{port}");
-    let lst = TcpListener::bind(addr).unwrap();
+    let lst = TcpListener::bind(addr)?;
 
     println!("Server listen port: {}", port);
 
-    match server::run(lst).await {
-        Ok(_) => {
-            println!("SUCCESS!");
-            ExitCode::SUCCESS
-        }
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            ExitCode::FAILURE
-        }
-    }
+    let database_url = env::var("DATABASE_URL")?;
+    let pool = database::establish_connection(database_url).await?;
+    let app_data = AppData::new(pool);
+
+    server::run(lst, app_data).await
 }

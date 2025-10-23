@@ -1,6 +1,5 @@
 use actix_web::{web, Error, HttpRequest, HttpResponse};
 use actix_ws::{Message, handle};
-use actix_rt::spawn;
 use futures_util::StreamExt as _;
 
 pub async fn ws_handler(
@@ -12,8 +11,8 @@ pub async fn ws_handler(
         mut session,
         mut msg_stream
     ) = handle(&req, stream)?;
-
-    spawn(async move {
+    
+    actix_rt::spawn(async move {
         while let Some(msg) = msg_stream.next().await {
             match msg {
                 Ok(Message::Text(text)) => {
@@ -31,7 +30,7 @@ pub async fn ws_handler(
                     eprintln!("Errors WebSocket: {err}");
                     break;
                 }
-                Ok(_) => {}
+                _ => {}
             }
         }
     });

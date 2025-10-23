@@ -3,7 +3,7 @@ use automerge::AutoCommit;
 use uuid::Uuid;
 
 use crate::{
-    app_error::AppResult,
+    core::app_error::AppResult,
     app::repositories::document_repository,
 };
 

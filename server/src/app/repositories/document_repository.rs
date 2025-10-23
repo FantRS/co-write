@@ -1,7 +1,7 @@
 use sqlx::{PgExecutor, Row};
 use uuid::Uuid;
 
-use crate::{app_error::AppResult};
+use crate::{core::app_error::AppResult};
 
 pub async fn create<'c, S, E>(title: S, content: Vec<u8>, executor: E) -> AppResult<Uuid>
 where 

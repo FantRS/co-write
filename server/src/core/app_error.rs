@@ -7,37 +7,37 @@ pub type AppResult<T> = Result<T, AppError>;
 
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
-    #[error("400 Bad Request [rost]")]
+    #[error("400 Bad Request")]
     BadRequest,
 
-    #[error("401 Unauthorized [rost]")]
+    #[error("401 Unauthorized")]
     Unauthorized,
 
-    #[error("403 Forbidden [rost]")]
+    #[error("403 Forbidden")]
     Forbidden,
 
-    #[error("404 Not Found [rost]")]
+    #[error("404 Not Found")]
     NotFound,
 
-    #[error("405 Method Not Allowed [rost]")]
+    #[error("405 Method Not Allowed")]
     MethodNotAllowed,
 
-    #[error("409 Conflict [rost]")]
+    #[error("409 Conflict")]
     Conflict,
 
-    #[error("422 Unprocessable Entity [rost]")]
+    #[error("422 Unprocessable Entity")]
     UnprocessableEntity,
 
-    #[error("500 Internal Server Error [rost]")]
-    InternalServerError,
+    #[error("500 Internal Server Error")]
+    InternalServerError(String),
 
-    #[error("501 Not Implemented [rost]")]
+    #[error("501 Not Implemented")]
     NotImplemented,
 
-    #[error("502 Bad Gateway [rost]")]
+    #[error("502 Bad Gateway")]
     BadGateway,
 
-    #[error("503 Service Unavailable [rost]")]
+    #[error("503 Service Unavailable")]
     ServiceUnavailable,
 }
 
@@ -58,7 +58,7 @@ impl ResponseError for AppError {
             AppError::Conflict => StatusCode::CONFLICT,
             AppError::UnprocessableEntity => StatusCode::UNPROCESSABLE_ENTITY,
 
-            AppError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::NotImplemented => StatusCode::NOT_IMPLEMENTED,
             AppError::BadGateway => StatusCode::BAD_GATEWAY,
             AppError::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE,
@@ -77,23 +77,11 @@ impl From<sqlx::Error> for AppError {
                     "23502" => AppError::BadRequest, // спроба впихнути NULL
                     "23503" => AppError::BadRequest, // неіснуючий елемент
                     "23505" => AppError::Conflict,   // дублікат значення
-                    _ => AppError::InternalServerError,
+                    _ => AppError::InternalServerError(db_error.to_string()),
                 }
             }
-            _ => AppError::InternalServerError,
+            _ => AppError::InternalServerError(error.to_string()),
         }
-    }
-}
-
-impl From<std::env::VarError> for AppError {
-    fn from(_: std::env::VarError) -> Self {
-        Self::InternalServerError
-    }
-}
-
-impl From<std::io::Error> for AppError {
-    fn from(_: std::io::Error) -> Self {
-        Self::InternalServerError
     }
 }
 
@@ -102,3 +90,16 @@ impl From<uuid::Error> for AppError {
         Self::BadRequest
     }
 }
+
+macro_rules! impl_from {
+    ( $e_type:ty ) => {
+        impl From<$e_type> for AppError {
+            fn from(error: $e_type) -> Self {
+                Self::InternalServerError(error.to_string())
+            }
+        }
+    };
+}
+
+impl_from!(std::env::VarError);
+impl_from!(std::io::Error);

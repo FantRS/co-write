@@ -1,7 +1,11 @@
-use actix_web::{web::{Data, Path}, HttpResponse, Responder};
+use actix_web::{
+    HttpResponse, Responder,
+    web::{Data, Path},
+};
 
 use crate::{
-    app::services::document_service, app_data::{AppData}, app_error::AppResult
+    app::services::document_service,
+    core::{app_data::AppData, app_error::AppResult},
 };
 
 pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResult<impl Responder> {
