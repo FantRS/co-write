@@ -16,19 +16,27 @@ class LobbyManager {
 
     initializeEventListeners() {
         // Create document
-        this.createBtn.addEventListener("click", () => this.handleCreateDocument());
-        
+        if (this.createBtn) {
+            this.createBtn.addEventListener("click", () => this.handleCreateDocument());
+        }
+
         // Join document
-        this.joinBtn.addEventListener("click", () => this.handleJoinDocument());
-        
-        // Enter key handling
-        this.docNameInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") this.handleCreateDocument();
-        });
-        
-        this.joinLinkInput.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") this.handleJoinDocument();
-        });
+        if (this.joinBtn) {
+            this.joinBtn.addEventListener("click", () => this.handleJoinDocument());
+        }
+
+        // Enter key handling (guard inputs)
+        if (this.docNameInput) {
+            this.docNameInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") this.handleCreateDocument();
+            });
+        }
+
+        if (this.joinLinkInput) {
+            this.joinLinkInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") this.handleJoinDocument();
+            });
+        }
     }
 
     async handleCreateDocument() {
@@ -54,7 +62,7 @@ class LobbyManager {
             // }
 
             // const documentId = await response.text();
-            const documentId = 10;
+            const documentId = name;
             this.showToast("Документ створено");
             
             // Redirect to editor page

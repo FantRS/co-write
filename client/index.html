@@ -1,68 +1,101 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="light">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>Lobby — CRDT Docs</title>
         <link rel="stylesheet" href="styles.css" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Roboto:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons"
+            rel="stylesheet"
+        />
     </head>
     <body>
-        <main class="container">
-            <header class="header">
+        <header class="app-header">
+            <div class="header-content">
                 <h1 class="brand">Co-Write</h1>
                 <p class="tag">Мінімалістичний редактор з синхронізацією</p>
-            </header>
+            </div>
+            <div class="theme-toggle">
+                <button id="toggleTheme">
+                    <span class="material-icons">dark_mode</span>
+                    Змінити тему
+                </button>
+            </div>
+        </header>
 
-            <section class="cards">
-                <article class="card">
-                    <h2>Створити документ</h2>
+        <main class="container">
+            <div class="centered-card lobby-card">
+                <h2 class="document-title">Створити новий документ</h2>
+                <div class="card-body">
                     <label class="field">
-                        <span class="label">Назва документу</span>
                         <input
                             id="docName"
                             type="text"
-                            placeholder="Нова Заява або My Notes"
+                            placeholder="Введіть назву документа..."
                             maxlength="120"
+                            autofocus
                         />
                     </label>
+
                     <div class="row">
                         <button id="createBtn" class="btn primary">
-                            Створити
+                            <span class="material-icons">add</span>
+                            Створити документ
                         </button>
                     </div>
-                </article>
-
-                <article class="card">
-                    <h2>Приєднатися по посиланню</h2>
-                    <label class="field">
-                        <span class="label">Посилання</span>
-                        <input
-                            id="joinLink"
-                            type="url"
-                            placeholder="https://app.example.com/doc/abcd"
-                        />
-                    </label>
-                    <div class="row">
-                        <button id="joinBtn" class="btn primary">
-                            Приєднатися
-                        </button>
-                    </div>
-                </article>
-            </section>
-
-            <section id="editor">
-                <textarea name="editorArea" id="editorArea"></textarea>
-            </section>
-
-            <footer class="footer">
-                <small
-                    >Працює з CRDT — WebSocket / WebRTC для реальної
-                    синхронізації.</small
-                >
-            </footer>
+                </div>
+                <div class="card-footer">
+                    <p>Посилання на документ буде згенеровано автоматично</p>
+                </div>
+            </div>
         </main>
 
+        <footer class="app-footer">
+            <small
+                >Працює з CRDT — WebSocket / WebRTC для реальної
+                синхронізації.</small
+            >
+        </footer>
+
         <div id="toast" class="toast" aria-live="polite" hidden></div>
+
+        <script>
+            // Theme toggle functionality
+            const html = document.documentElement;
+            const themeToggle = document.getElementById("toggleTheme");
+            const themeIcon = themeToggle.querySelector(".material-icons");
+
+            function updateThemeIcon(isDark) {
+                themeIcon.textContent = isDark ? "light_mode" : "dark_mode";
+            }
+
+            function setTheme(isDark) {
+                html.dataset.theme = isDark ? "dark" : "light";
+                updateThemeIcon(isDark);
+            }
+
+            // Check system theme preference
+            if (window.matchMedia) {
+                const darkModeQuery = window.matchMedia(
+                    "(prefers-color-scheme: dark)"
+                );
+                setTheme(darkModeQuery.matches);
+                darkModeQuery.addEventListener("change", (e) =>
+                    setTheme(e.matches)
+                );
+            }
+
+            // Theme toggle button
+            themeToggle.addEventListener("click", () => {
+                const isDark = html.dataset.theme === "light";
+                setTheme(isDark);
+            });
+        </script>
 
         <script src="app.js" type="module"></script>
     </body>
