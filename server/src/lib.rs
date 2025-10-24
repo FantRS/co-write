@@ -5,6 +5,7 @@ pub mod ws;
 
 use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
+use tracing_actix_web::TracingLogger;
 use std::net::TcpListener;
 
 use app::controllers::document_controller;
@@ -13,9 +14,10 @@ use core::{app_data::AppData, app_error::AppResult};
 pub async fn run(lst: TcpListener, app_data: AppData) -> AppResult<()> {
     HttpServer::new(move || {
         App::new()
+            .wrap(TracingLogger::default())
             .wrap(Cors::default().allow_any_origin())
             .service(
-                web::scope("documents")
+                web::scope("/documents")
                     .route(
                         "/create",
                         web::post().to(document_controller::create_document),
