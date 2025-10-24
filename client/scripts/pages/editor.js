@@ -1,12 +1,11 @@
-import { get_snapshot_ep } from "./paths.js";
-import socket from "./socket.js";
+import socket from "../core/socket.js";
+import { showToast } from "../other/showToast.js";
 
 class Editor {
     constructor() {
         this.initializeElements();
         this.initializeEventListeners();
         this.setupWebSocket();
-        this.loadDocument();
 
         this.timeout = null;
         this.lastSync = Date.now();
@@ -26,7 +25,7 @@ class Editor {
         // Get document ID from URL
         this.documentId = new URL(window.location.href).searchParams.get("id");
         if (!this.documentId) {
-            this.showToast("Документ не знайдено", 3000);
+            showToast("Документ не знайдено", 3000);
             setTimeout(() => {
                 window.location.href = "/";
             }, 3000);
@@ -52,8 +51,8 @@ class Editor {
             const url = window.location.href;
             navigator.clipboard
                 .writeText(url)
-                .then(() => this.showToast("Посилання скопійовано"))
-                .catch(() => this.showToast("Помилка копіювання посилання"));
+                .then(() => showToast("Посилання скопійовано"))
+                .catch(() => showToast("Помилка копіювання посилання"));
         });
 
         this.backToLobbyBtn.addEventListener("click", () => {
@@ -65,16 +64,16 @@ class Editor {
         });
     }
 
-    // SETUP WEBSOCKET LISTENERS
+    // == SETUP WEBSOCKET LISTENERS ==
     setupWebSocket() {
         socket.onopen = () => {
             this.updateConnectionStatus("connected");
-            this.showToast("Підключено до сервера");
+            showToast("Підключено до сервера");
         };
 
         socket.onclose = () => {
             this.updateConnectionStatus("disconnected");
-            this.showToast("Втрачено з'єднання з сервером");
+            showToast("Втрачено з'єднання з сервером");
 
             // Try to reconnect after 5 seconds
             setTimeout(() => {
@@ -84,13 +83,13 @@ class Editor {
 
         socket.onerror = () => {
             this.updateConnectionStatus("error");
-            this.showToast("Помилка з'єднання з сервером");
+            showToast("Помилка з'єднання з сервером");
 
             // Try to reconnect after 5 seconds
             setTimeout(() => {
                 this.setupWebSocket();
             }, 5000);
-        }
+        };
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -103,27 +102,10 @@ class Editor {
                     this.updateConnectedUsers(data.count);
                     break;
                 case "error":
-                    this.showToast(data.message);
+                    showToast(data.message);
                     break;
             }
         };
-    }
-
-    async loadDocument() {
-        try {
-            const response = await fetch(get_snapshot_ep(this.documentId));
-            if (!response.ok) throw new Error("Помилка завантаження документа");
-
-            const data = await response.json();
-            this.documentTitle.textContent = data.title;
-            this.editorArea.value = data.content;
-
-            // Enable editor after content is loaded
-            this.editorArea.disabled = false;
-        } catch (error) {
-            this.showToast("Помилка завантаження документа");
-            console.error("Load document error:", error);
-        }
     }
 
     syncContent() {
@@ -154,9 +136,11 @@ class Editor {
         }
     }
 
+    // == UPDATE INFO ==
     updateConnectionStatus(status) {
-        this.connectionStatus.className = "status-chip connection-status " + status;
-        const statusText = this.connectionStatus.querySelector('.status-text');
+        this.connectionStatus.className =
+            "status-chip connection-status " + status;
+        const statusText = this.connectionStatus.querySelector(".status-text");
         switch (status) {
             case "connected":
                 statusText.textContent = "Підключено";
@@ -169,22 +153,12 @@ class Editor {
                 break;
         }
     }
-
     updateConnectedUsers(count) {
         this.connectedUsers.textContent = `Користувачів онлайн: ${count}`;
     }
-
     updateSyncStatus(status) {
-        this.syncStatus.textContent = status;
-    }
-
-    showToast(message, duration = 2500) {
-        this.toast.textContent = message;
-        this.toast.hidden = false;
-
-        setTimeout(() => {
-            this.toast.hidden = true;
-        }, duration);
+        const statusText = this.syncStatus.querySelector('.status-text');
+        statusText.textContent = status;
     }
 }
 
