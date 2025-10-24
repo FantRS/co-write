@@ -7,7 +7,7 @@ use std::{env, net::TcpListener};
 #[tokio::main]
 async fn main() -> AppResult<()> {
     dotenvy::dotenv().ok();
-    telemetry::init_logger("info");
+    telemetry::init_logger("debug");
 
     let addr = format_addr()?;
     let lst = TcpListener::bind(&addr)?;

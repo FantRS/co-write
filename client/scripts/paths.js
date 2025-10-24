@@ -6,7 +6,7 @@ export function websocket_url() {
     return `ws://${server_url()}/ws`;
 }
 
-export function get_snap_ep() {
+export function get_snapshot_ep() {
     return `http://${server_url()}/documents`;
 }
 

@@ -1,4 +1,4 @@
-import { get_snap_ep } from "./paths.js";
+import { get_snapshot_ep } from "./paths.js";
 import socket from "./socket.js";
 
 class Editor {
@@ -7,14 +7,13 @@ class Editor {
         this.initializeEventListeners();
         this.setupWebSocket();
         this.loadDocument();
-        
-        // Debounce variables
+
         this.timeout = null;
         this.lastSync = Date.now();
     }
 
+    // == INIT ELEMENTS BY ID ==
     initializeElements() {
-        // UI Elements
         this.editorArea = document.getElementById("editorArea");
         this.documentTitle = document.getElementById("documentTitle");
         this.connectionStatus = document.getElementById("connectionStatus");
@@ -34,12 +33,12 @@ class Editor {
         }
     }
 
+    // == INIT EVENT LISTENERS ==
     initializeEventListeners() {
-        // Editor input handling with debouncing
         this.editorArea.addEventListener("input", () => {
             this.updateSyncStatus("Синхронізація...");
             clearTimeout(this.timeout);
-            
+
             // If last sync was more than 500ms ago, sync immediately
             if (Date.now() - this.lastSync > 500) {
                 this.syncContent();
@@ -49,25 +48,24 @@ class Editor {
             }
         });
 
-        // Copy link button
         this.copyLinkBtn.addEventListener("click", () => {
             const url = window.location.href;
-            navigator.clipboard.writeText(url)
+            navigator.clipboard
+                .writeText(url)
                 .then(() => this.showToast("Посилання скопійовано"))
                 .catch(() => this.showToast("Помилка копіювання посилання"));
         });
 
-        // Back to lobby button
         this.backToLobbyBtn.addEventListener("click", () => {
-            window.location.href = "/";
+            window.location.href = "/client/index.html";
         });
 
-        // Handle page unload
         window.addEventListener("beforeunload", () => {
             socket.close();
         });
     }
 
+    // SETUP WEBSOCKET LISTENERS
     setupWebSocket() {
         socket.onopen = () => {
             this.updateConnectionStatus("connected");
@@ -77,16 +75,26 @@ class Editor {
         socket.onclose = () => {
             this.updateConnectionStatus("disconnected");
             this.showToast("Втрачено з'єднання з сервером");
-            
+
             // Try to reconnect after 5 seconds
             setTimeout(() => {
                 this.setupWebSocket();
             }, 5000);
         };
 
+        socket.onerror = () => {
+            this.updateConnectionStatus("error");
+            this.showToast("Помилка з'єднання з сервером");
+
+            // Try to reconnect after 5 seconds
+            setTimeout(() => {
+                this.setupWebSocket();
+            }, 5000);
+        }
+
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            
+
             switch (data.type) {
                 case "content":
                     this.handleContentUpdate(data);
@@ -103,13 +111,13 @@ class Editor {
 
     async loadDocument() {
         try {
-            const response = await fetch(get_snap_ep(this.documentId));
+            const response = await fetch(get_snapshot_ep(this.documentId));
             if (!response.ok) throw new Error("Помилка завантаження документа");
-            
+
             const data = await response.json();
             this.documentTitle.textContent = data.title;
             this.editorArea.value = data.content;
-            
+
             // Enable editor after content is loaded
             this.editorArea.disabled = false;
         } catch (error) {
@@ -120,12 +128,14 @@ class Editor {
 
     syncContent() {
         const content = this.editorArea.value;
-        
-        socket.send(JSON.stringify({
-            type: "update",
-            documentId: this.documentId,
-            content: content
-        }));
+
+        socket.send(
+            JSON.stringify({
+                type: "update",
+                documentId: this.documentId,
+                content: content,
+            })
+        );
 
         this.lastSync = Date.now();
         this.updateSyncStatus("Синхронізовано");
@@ -136,9 +146,9 @@ class Editor {
         if (this.editorArea.value !== data.content) {
             const start = this.editorArea.selectionStart;
             const end = this.editorArea.selectionEnd;
-            
+
             this.editorArea.value = data.content;
-            
+
             // Restore cursor position
             this.editorArea.setSelectionRange(start, end);
         }
@@ -170,7 +180,7 @@ class Editor {
     showToast(message, duration = 2500) {
         this.toast.textContent = message;
         this.toast.hidden = false;
-        
+
         setTimeout(() => {
             this.toast.hidden = true;
         }, duration);
