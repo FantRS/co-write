@@ -2,6 +2,7 @@ pub mod app;
 pub mod core;
 pub mod extensions;
 pub mod ws;
+pub mod telemetry;
 
 use actix_cors::Cors;
 use actix_web::{App, HttpServer, web};
