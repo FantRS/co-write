@@ -155,16 +155,17 @@ class Editor {
     }
 
     updateConnectionStatus(status) {
-        this.connectionStatus.className = "connection-status " + status;
+        this.connectionStatus.className = "status-chip connection-status " + status;
+        const statusText = this.connectionStatus.querySelector('.status-text');
         switch (status) {
             case "connected":
-                this.connectionStatus.textContent = "Підключено";
+                statusText.textContent = "Підключено";
                 break;
             case "disconnected":
-                this.connectionStatus.textContent = "Відключено";
+                statusText.textContent = "Відключено";
                 break;
             case "connecting":
-                this.connectionStatus.textContent = "Підключення...";
+                statusText.textContent = "Підключення...";
                 break;
         }
     }
