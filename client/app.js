@@ -1,79 +1,129 @@
-const $ = (sel) => document.querySelector(sel);
-const createBtn = $("#createBtn");
-const joinBtn = $("#joinBtn");
-const toast = $("#toast");
-const editorArea = $("#editorArea")
+import { create_doc_ep } from "./paths.js";
 
-let socket = new WebSocket('ws://localhost:5000/ws')
-
-socket.onopen = () => console.log('WS opened')
-socket.onclose = () => console.log('WS closed')
-socket.onerror = (e) => console.error(e)
-socket.onmessage = (event) => console.log(event.data)
-
-editorArea.addEventListener("keyup", ({ target }) => {
-    socket.send(target.value)
-})
-
-createBtn.addEventListener("click", async () => {
-    const name = $("#docName").value.trim();
-
-    if (!name) {
-        showToast("Введіть назву документу");
-        return;
+class LobbyManager {
+    constructor() {
+        this.initializeElements();
+        this.initializeEventListeners();
     }
 
-    // const fakeId = Math.random().toString(36).slice(2, 10);
-    // const docUrl = `${location.origin}/documents/${fakeId}`;
-
-    // showToast("Документ створено — перенаправлення...");
-    // setTimeout(() => {
-    //     location.href = docUrl;
-    // }, 700);
-
-    const res = await fetch('http://localhost:5000/documents', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'text/plain',
-        },
-        body: name,
-        mode: 'cors',
-    })
-
-    const documentId = await res.text()
-});
-
-joinBtn.addEventListener("click", () => {
-    const url = $("#joinLink").value.trim();
-    if (!url) {
-        showToast("Вставте посилання або id документа");
-        return;
+    initializeElements() {
+        this.createBtn = document.getElementById("createBtn");
+        this.joinBtn = document.getElementById("joinBtn");
+        this.docNameInput = document.getElementById("docName");
+        this.joinLinkInput = document.getElementById("joinLink");
+        this.toast = document.getElementById("toast");
     }
-    try {
-        const u = new URL(url, location.origin);
-        showToast("Перенаправляємо...");
-        setTimeout(() => {
-            location.href = u.href;
-        }, 350);
-    } catch (e) {
-        showToast("Неправильний URL");
-    }
-});
 
-["#docName", "#joinLink"].forEach((sel) => {
-    const el = document.querySelector(sel);
-    el.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            if (sel === "#docName") createBtn.click();
-            else joinBtn.click();
+    initializeEventListeners() {
+        // Create document
+        this.createBtn.addEventListener("click", () => this.handleCreateDocument());
+        
+        // Join document
+        this.joinBtn.addEventListener("click", () => this.handleJoinDocument());
+        
+        // Enter key handling
+        this.docNameInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") this.handleCreateDocument();
+        });
+        
+        this.joinLinkInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") this.handleJoinDocument();
+        });
+    }
+
+    async handleCreateDocument() {
+        const name = this.docNameInput.value.trim();
+
+        if (!name) {
+            this.showToast("Введіть назву документу");
+            return;
         }
-    });
-});
 
-function showToast(msg, timeout = 2500) {
-    toast.hidden = false;
-    toast.textContent = msg;
-    setTimeout(() => {
-        toast.hidden = true;
-    }, timeout);
+        try {
+            const response = await fetch(create_doc_ep(), {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain",
+                },
+                body: name,
+                mode: "cors",
+            });
+
+            // if (!response.ok) {
+            //     throw new Error("Помилка створення документа");
+            // }
+
+            // const documentId = await response.text();
+            const documentId = 10;
+            this.showToast("Документ створено");
+            
+            // Redirect to editor page
+            setTimeout(() => {
+                window.location.href = `./editor.html?id=${documentId}`;
+            }, 500);
+
+        } catch (error) {
+            this.showToast("Помилка створення документа");
+            console.error("Create document error:", error);
+        }
+    }
+
+    handleJoinDocument() {
+        const url = this.joinLinkInput.value.trim();
+        
+        if (!url) {
+            this.showToast("Вставте посилання або id документа");
+            return;
+        }
+
+        try {
+            // If URL is just an ID, construct full URL
+            const documentId = this.extractDocumentId(url);
+            if (documentId) {
+                window.location.href = `/editor.html?id=${documentId}`;
+                return;
+            }
+
+            // Otherwise try to parse as full URL
+            const parsedUrl = new URL(url, window.location.origin);
+            this.showToast("Перенаправляємо...");
+            
+            setTimeout(() => {
+                window.location.href = parsedUrl.href;
+            }, 350);
+
+        } catch (error) {
+            this.showToast("Неправильний URL");
+            console.error("Join document error:", error);
+        }
+    }
+
+    extractDocumentId(input) {
+        // Check if input is just an ID (alphanumeric string)
+        if (/^[a-zA-Z0-9-_]+$/.test(input)) {
+            return input;
+        }
+        
+        // Try to extract ID from URL
+        try {
+            const url = new URL(input);
+            return url.searchParams.get("id");
+        } catch {
+            return null;
+        }
+    }
+
+    showToast(message, duration = 2500) {
+        this.toast.textContent = message;
+        this.toast.hidden = false;
+        
+        setTimeout(() => {
+            this.toast.hidden = true;
+        }, duration);
+    }
 }
+
+// Initialize lobby when DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
+    new LobbyManager();
+});
