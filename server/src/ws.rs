@@ -38,7 +38,7 @@ pub async fn ws_handler(
         while let Some(msg) = msg_stream.next().await {
             match msg {
                 Ok(Message::Text(text)) => {
-                    tracing::trace!("Received message: {text}");
+                    tracing::debug!("Received message: {text}");
                     let _ = session.text(text).await;
                 }
                 Ok(Message::Binary(bin)) => {

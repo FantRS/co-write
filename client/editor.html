@@ -1,47 +1,84 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="light">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>Редактор — Co-Write</title>
         <link rel="stylesheet" href="styles.css" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Roboto:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons"
+            rel="stylesheet"
+        />
     </head>
     <body>
-        <main class="container">
-            <header class="header">
+        <header class="app-header">
+            <div class="header-content">
                 <h1 class="brand">Co-Write</h1>
-                <div class="editor-controls">
-                    <button id="copyLink" class="btn secondary">Скопіювати посилання</button>
-                    <button id="backToLobby" class="btn primary">На головну</button>
+                <p class="tag">Синхронний редактор тексту</p>
+            </div>
+            <div class="editor-controls">
+                <button id="copyLink" class="btn secondary">
+                    <span class="material-icons">content_copy</span>
+                    Скопіювати посилання
+                </button>
+                <button id="backToLobby" class="btn primary">
+                    <span class="material-icons">home</span>
+                    На головну
+                </button>
+                <div class="theme-toggle">
+                    <button id="toggleTheme">
+                        <span class="material-icons">dark_mode</span>
+                    </button>
                 </div>
-            </header>
+            </div>
+        </header>
 
-            <section class="editor-container">
+        <main class="editor-wrapper">
+            <div class="editor-container">
                 <div class="editor-header">
-                    <h2 id="documentTitle" class="document-title">Завантаження...</h2>
-                    <span id="connectionStatus" class="connection-status">Підключення...</span>
+                    <h2 id="documentTitle" class="document-title">
+                        Завантаження...
+                    </h2>
+                    <div class="document-status">
+                        <span id="connectionStatus" class="status-chip">
+                            <span class="material-icons">wifi</span>
+                            <span class="status-text">Підключення...</span>
+                        </span>
+                        <span id="connectedUsers" class="status-chip">
+                            <span class="material-icons">group</span>
+                            <span class="status-text"
+                                >Користувачів онлайн: 1</span
+                            >
+                        </span>
+                    </div>
                 </div>
-                <div class="editor-wrapper">
-                    <textarea 
-                        id="editorArea" 
-                        class="editor-area" 
+                <div class="editor-content">
+                    <textarea
+                        id="editorArea"
+                        class="editor-area"
                         placeholder="Почніть писати тут..."
                         spellcheck="true"
                     ></textarea>
                 </div>
                 <div class="editor-footer">
-                    <span id="connectedUsers" class="connected-users">Користувачів онлайн: 1</span>
-                    <span id="syncStatus" class="sync-status">Синхронізовано</span>
+                    <span id="syncStatus" class="status-chip">
+                        <span class="material-icons">sync</span>
+                        <span class="status-text">Синхронізовано</span>
+                    </span>
                 </div>
-            </section>
-
-            <footer class="footer">
-                <small>Co-Write — Синхронний редактор тексту</small>
-            </footer>
+            </div>
         </main>
 
-        <div id="toast" class="toast" aria-live="polite" hidden></div>
+        <div id="toast" class="toast" aria-live="polite" hidden>
+            <span class="material-icons">info</span>
+            <span class="toast-message"></span>
+        </div>
 
-        <script src="editor.js" type="module"></script>
+        <script src="./scripts/other/toogleThemes.js"></script>
+        <script src="./scripts/pages/editor.js" type="module"></script>
     </body>
 </html>
