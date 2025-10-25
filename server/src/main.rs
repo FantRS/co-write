@@ -1,4 +1,5 @@
 use server::{
+    app::models::ws_rooms::Rooms,
     core::{app_data::AppData, app_error::AppResult, database},
     telemetry,
 };
@@ -17,8 +18,9 @@ async fn main() -> AppResult<()> {
     let database_url = env::var("DATABASE_URL")?;
     let pool = database::establish_connection(database_url).await?;
     let app_data = AppData::new(pool);
+    let rooms = Rooms::new();
 
-    server::run(lst, app_data).await
+    server::run(lst, app_data, rooms).await
 }
 
 fn format_addr() -> AppResult<String> {

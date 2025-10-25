@@ -91,6 +91,12 @@ impl From<uuid::Error> for AppError {
     }
 }
 
+impl From<actix_web::Error> for AppError {
+    fn from(_: actix_web::Error) -> Self {
+        Self::BadRequest // можливо змінити на щось інше
+    }
+}
+
 macro_rules! impl_from {
     ( $e_type:ty ) => {
         impl From<$e_type> for AppError {

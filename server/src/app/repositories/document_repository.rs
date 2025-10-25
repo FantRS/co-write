@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{core::app_error::AppResult};
 
 pub async fn create<'c, S, E>(title: S, content: Vec<u8>, executor: E) -> AppResult<Uuid>
-where 
+where
     S: AsRef<str>,
     E: PgExecutor<'c>,
 {
@@ -23,8 +23,8 @@ where
     Ok(id)
 }
 
-pub async fn read<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<u8>> 
-where 
+pub async fn read<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<u8>>
+where
     E: PgExecutor<'c>,
 {
     // let uuid = Uuid::parse_str(id.as_ref())?;
