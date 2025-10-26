@@ -15,6 +15,13 @@ impl AppData {
     pub fn builder() -> AppDataBuilder {
         AppDataBuilder::default()
     }
+
+    pub fn get_data(&self) -> (PgPool, Rooms) {
+        let pool = self.pool.clone();
+        let rooms = self.rooms.clone();
+
+        (pool, rooms)
+    }
 }
 
 #[derive(Default)]
@@ -26,8 +33,13 @@ pub struct AppDataBuilder {
 impl AppDataBuilder {
     pub fn build(self) -> AppResult<AppData> {
         let data = AppData {
-            pool: self.pool.ok_or(AppError::InternalServer("PgPool not set".into()))?,
-            rooms: self.rooms.ok_or(AppError::InternalServer("Rooms not set".into()))?,
+            pool: self
+                .pool
+                .ok_or(AppError::InternalServer("PgPool not set".into()))?,
+                
+            rooms: self
+                .rooms
+                .ok_or(AppError::InternalServer("Rooms not set".into()))?,
         };
 
         Ok(data)
