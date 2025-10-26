@@ -29,7 +29,7 @@ pub enum AppError {
     UnprocessableEntity,
 
     #[error("500 Internal Server Error")]
-    InternalServerError(String),
+    InternalServer(String),
 
     #[error("501 Not Implemented")]
     NotImplemented,
@@ -58,7 +58,7 @@ impl ResponseError for AppError {
             AppError::Conflict => StatusCode::CONFLICT,
             AppError::UnprocessableEntity => StatusCode::UNPROCESSABLE_ENTITY,
 
-            AppError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InternalServer(_) => StatusCode::INTERNAL_SERVER_ERROR,
             AppError::NotImplemented => StatusCode::NOT_IMPLEMENTED,
             AppError::BadGateway => StatusCode::BAD_GATEWAY,
             AppError::ServiceUnavailable => StatusCode::SERVICE_UNAVAILABLE,
@@ -77,10 +77,10 @@ impl From<sqlx::Error> for AppError {
                     "23502" => AppError::BadRequest, // спроба впихнути NULL
                     "23503" => AppError::BadRequest, // неіснуючий елемент
                     "23505" => AppError::Conflict,   // дублікат значення
-                    _ => AppError::InternalServerError(db_error.to_string()),
+                    _ => AppError::InternalServer(db_error.to_string()),
                 }
             }
-            _ => AppError::InternalServerError(error.to_string()),
+            _ => AppError::InternalServer(error.to_string()),
         }
     }
 }
@@ -101,7 +101,7 @@ macro_rules! impl_from {
     ( $e_type:ty ) => {
         impl From<$e_type> for AppError {
             fn from(error: $e_type) -> Self {
-                Self::InternalServerError(error.to_string())
+                Self::InternalServer(error.to_string())
             }
         }
     };
