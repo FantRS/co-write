@@ -17,10 +17,13 @@ async fn main() -> AppResult<()> {
 
     let database_url = env::var("DATABASE_URL")?;
     let pool = database::establish_connection(database_url).await?;
-    let app_data = AppData::new(pool);
-    let rooms = Rooms::new();
+    let rooms = Rooms::default();
+    let app_data = AppData::builder()
+        .with_pool(pool)
+        .with_rooms(rooms)
+        .build()?;
 
-    server::run(lst, app_data, rooms).await
+    server::run(lst, app_data).await
 }
 
 fn format_addr() -> AppResult<String> {

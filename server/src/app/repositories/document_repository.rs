@@ -1,7 +1,8 @@
+use actix_web::web::Bytes;
 use sqlx::{PgExecutor, Row};
 use uuid::Uuid;
 
-use crate::{core::app_error::AppResult};
+use crate::core::app_error::AppResult;
 
 pub async fn create<'c, S, E>(title: S, content: Vec<u8>, executor: E) -> AppResult<Uuid>
 where
@@ -27,8 +28,6 @@ pub async fn read<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<u8>>
 where
     E: PgExecutor<'c>,
 {
-    // let uuid = Uuid::parse_str(id.as_ref())?;
-
     let row = sqlx::query(
         "SELECT content 
         FROM documents 
@@ -41,4 +40,19 @@ where
     let content = row.get("content");
 
     Ok(content)
+}
+
+pub async fn push_change_in_db<'c, E>(id: Uuid, change: Bytes, executor: E) -> AppResult<()>
+where
+    E: PgExecutor<'c>,
+{
+    let _ = sqlx::query!(
+        "INSERT INTO document_updates (document_id, update) VALUES ($1, $2)",
+        id,
+        change.as_ref(),
+    )
+    .execute(executor)
+    .await?;
+
+    Ok(())
 }

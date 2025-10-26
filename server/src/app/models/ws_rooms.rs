@@ -1,21 +1,30 @@
+use actix_web::web::Bytes;
 use actix_ws::Session;
 use dashmap::DashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
-pub struct Rooms(pub Arc<DashMap<Uuid, Vec<Connection>>>);
+pub struct Rooms {
+    pub value: Arc<DashMap<Uuid, Vec<Connection>>>,
+}
 
 impl Rooms {
-    pub fn new() -> Self {
-        Self(Arc::new(DashMap::new()))
-    }
-
     pub fn remove_connection(&self, room_id: &Uuid, connection_id: Uuid) {
-        if let Some(mut room_connection) = self.0.get_mut(room_id) {
+        if let Some(mut room_connection) = self.value.get_mut(room_id) {
             room_connection.retain(|connection| connection.id != connection_id);
 
             if room_connection.is_empty() {
-                self.0.remove(room_id);
+                self.value.remove(room_id);
+            }
+        }
+    }
+
+    pub async fn send_change(&self, room_id: &Uuid, connection_id: Uuid, change: Bytes) {
+        if let Some(mut clients) = self.value.get_mut(&room_id) {
+            for conn in clients.iter_mut() {
+                if conn.id != connection_id {
+                    let _ = conn.session.binary(change.clone()).await;
+                }
             }
         }
     }
@@ -23,13 +32,17 @@ impl Rooms {
 
 impl Default for Rooms {
     fn default() -> Self {
-        Self::new()
+        Self {
+            value: Arc::new(DashMap::new()),
+        }
     }
 }
 
 impl Clone for Rooms {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        Self {
+            value: self.value.clone(),
+        }
     }
 }
 
