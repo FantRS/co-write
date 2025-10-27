@@ -17,8 +17,9 @@ use crate::{
     fields(request_id)
 )]
 #[utoipa::path(
-    get, path = "/ws/{id}",
-    params(("doc_id" = String, Path, description = "Document ID for websocket connection"))
+    get, 
+    params(("id" = Uuid, description = "Document ID for websocket connection")),
+    path = "/api/ws/{id}",
 )]
 pub async fn ws_handler(
     req: HttpRequest,
