@@ -1,9 +1,9 @@
 function serverUrl() {
-    return "localhost:5000";
+    return "localhost:8080";
 }
 
-export function webSocketUrl() {
-    return `ws://${serverUrl()}/ws`;
+export function webSocketUrl(id) {
+    return `ws://${serverUrl()}/ws/${id}`;
 }
 
 export function getSnapshotEndpoint() {

@@ -1,8 +1,12 @@
-import socket from "../core/socket.js";
+// import socket from "../core/socket.js";
 import { showToast } from "../other/showToast.js";
+import { webSocketUrl } from "../core/paths.js";
+
+// let socket = new WebSocket(webSocketUrl());
 
 class Editor {
     constructor() {
+        this.socket = null;
         this.initializeElements();
         this.initializeEventListeners();
         this.setupWebSocket();
@@ -60,18 +64,21 @@ class Editor {
         });
 
         window.addEventListener("beforeunload", () => {
-            socket.close();
+            this.socket.close();
         });
     }
 
     // == SETUP WEBSOCKET LISTENERS ==
     setupWebSocket() {
-        socket.onopen = () => {
+        this.socket = new WebSocket(webSocketUrl(this.documentId));
+
+        console.log(this.documentId);
+        this.socket.onopen = () => {
             this.updateConnectionStatus("connected");
             showToast("Підключено до сервера");
         };
 
-        socket.onclose = () => {
+        this.socket.onclose = () => {
             this.updateConnectionStatus("disconnected");
             showToast("Втрачено з'єднання з сервером");
 
@@ -81,7 +88,7 @@ class Editor {
             }, 5000);
         };
 
-        socket.onerror = () => {
+        this.socket.onerror = () => {
             this.updateConnectionStatus("error");
             showToast("Помилка з'єднання з сервером");
 
@@ -91,7 +98,7 @@ class Editor {
             }, 5000);
         };
 
-        socket.onmessage = (event) => {
+        this.socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
 
             switch (data.type) {
@@ -111,7 +118,7 @@ class Editor {
     syncContent() {
         const content = this.editorArea.value;
 
-        socket.send(
+        this.socket.send(
             JSON.stringify({
                 type: "update",
                 documentId: this.documentId,
@@ -157,7 +164,7 @@ class Editor {
         this.connectedUsers.textContent = `Користувачів онлайн: ${count}`;
     }
     updateSyncStatus(status) {
-        const statusText = this.syncStatus.querySelector('.status-text');
+        const statusText = this.syncStatus.querySelector(".status-text");
         statusText.textContent = status;
     }
 }

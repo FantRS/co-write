@@ -43,12 +43,11 @@ class LobbyManager {
                 mode: "cors",
             });
 
-            // if (!response.ok) {
-            //     throw new Error("Помилка створення документа");
-            // }
+            if (!response.ok) {
+                throw new Error("Помилка створення документа");
+            }
 
-            // const documentId = await response.text();
-            const documentId = name;
+            const documentId = await response.text();
             showToast("Документ створено");
 
             // Redirect to editor page
