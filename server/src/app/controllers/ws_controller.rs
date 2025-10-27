@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[tracing::instrument(
-    name = "WebSocket connect",
+    name = "ws_handler",
     skip(req, stream, app_data),
     fields(request_id)
 )]

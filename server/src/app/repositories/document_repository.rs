@@ -1,25 +1,24 @@
 use actix_web::web::Bytes;
-use sqlx::{PgExecutor, Row};
+use sqlx::PgExecutor;
 use uuid::Uuid;
 
 use crate::core::app_error::AppResult;
 
-pub async fn create<'c, S, E>(title: S, content: Vec<u8>, executor: E) -> AppResult<Uuid>
+pub async fn create<'c, S, I, E>(title: S, content: I, executor: E) -> AppResult<Uuid>
 where
     S: AsRef<str>,
+    I: IntoIterator<Item = u8>,
     E: PgExecutor<'c>,
 {
-    let row = sqlx::query(
+    let id = sqlx::query_scalar!(
         "INSERT INTO documents (title, content) 
-        VALUES ($1, $2) 
-        RETURNING id"
+            VALUES ($1, $2) 
+            RETURNING id",
+        title.as_ref(),
+        content.into_iter().collect::<Vec<u8>>()
     )
-    .bind(title.as_ref())
-    .bind(content)
     .fetch_one(executor)
     .await?;
-
-    let id: Uuid = row.get("id");
 
     Ok(id)
 }
@@ -28,16 +27,14 @@ pub async fn read<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<u8>>
 where
     E: PgExecutor<'c>,
 {
-    let row = sqlx::query(
+    let content = sqlx::query_scalar!(
         "SELECT content 
-        FROM documents 
-        WHERE id = $1"
+            FROM documents 
+            WHERE id = $1",
+        id
     )
-    .bind(id)
     .fetch_one(executor)
     .await?;
-
-    let content = row.get("content");
 
     Ok(content)
 }
@@ -46,8 +43,9 @@ pub async fn push_change_in_db<'c, E>(id: Uuid, change: Bytes, executor: E) -> A
 where
     E: PgExecutor<'c>,
 {
-    let _ = sqlx::query!(
-        "INSERT INTO document_updates (document_id, update) VALUES ($1, $2)",
+    sqlx::query!(
+        "INSERT INTO document_updates (document_id, update) 
+            VALUES ($1, $2)",
         id,
         change.as_ref(),
     )
