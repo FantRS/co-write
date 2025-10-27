@@ -10,10 +10,11 @@ pub struct Rooms {
 
 impl Rooms {
     pub fn remove_connection(&self, room_id: &Uuid, connection_id: Uuid) {
-        if let Some(mut room_connection) = self.value.get_mut(room_id) {
-            room_connection.retain(|connection| connection.id != connection_id);
+        if let Some(mut room_connections) = self.value.get_mut(room_id) {
+            room_connections.retain(|connection| connection.id != connection_id);
 
-            if room_connection.is_empty() {
+            if room_connections.is_empty() {
+                drop(room_connections);
                 self.value.remove(room_id);
             }
         }
