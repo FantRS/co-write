@@ -16,6 +16,10 @@ use crate::{
     skip(req, stream, app_data),
     fields(request_id)
 )]
+#[utoipa::path(
+    get, path = "/ws/{id}",
+    params(("doc_id" = String, Path, description = "Document ID for websocket connection"))
+)]
 pub async fn ws_handler(
     req: HttpRequest,
     stream: web::Payload,
