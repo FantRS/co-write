@@ -2,6 +2,7 @@ use actix_web::{
     HttpResponse, Responder,
     web::{Data, Path},
 };
+use uuid::Uuid;
 
 use crate::{
     app::services::document_service,
@@ -33,7 +34,7 @@ pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResul
     skip(app_data),
     fields(request_id, doc_id = %id)
 )]
-pub async fn get_document(id: Path<String>, app_data: Data<AppData>) -> AppResult<impl Responder> {
+pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let id = id.into_inner();
     let app_data = app_data.into_inner();
     match document_service::read_document(id, &app_data.pool).await {

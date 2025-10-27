@@ -14,30 +14,32 @@ use crate::{
 #[tracing::instrument(
     name = "ws_handler",
     skip(req, stream, app_data),
-    fields(request_id)
+    fields(request_id, doc_id)
 )]
 pub async fn ws_handler(
     req: HttpRequest,
     stream: web::Payload,
-    doc_id: Path<String>,
+    doc_id: Path<Uuid>,
     app_data: web::Data<AppData>,
 ) -> AppResult<impl Responder> {
-    let doc_id = Uuid::parse_str(&doc_id.into_inner())?;
+    let doc_id = doc_id.into_inner();
     let (res, mut session, mut msg_stream) = handle(&req, stream)?;
+    let (pool, rooms) = app_data.get_data();
 
-    tracing::info!("WebSocken connect creaded");
+    tracing::info!("WebSocket connect creaded");
 
     let connection = Connection {
         id: Uuid::new_v4(),
         session: session.clone(),
     };
 
-    app_data
-        .rooms
+    rooms
         .value
         .entry(doc_id)
         .or_default()
         .push(connection.clone());
+
+    let _ = document_service::send_existing_changes(&pool, &mut session, doc_id).await;
 
     actix_rt::spawn(async move {
         while let Some(msg) = msg_stream.next().await {
@@ -53,7 +55,7 @@ pub async fn ws_handler(
                     Err(err) => tracing::error!("Failed to decode sync message: {err:?}"),
                 },
                 Ok(Message::Close(reason)) => {
-                    app_data.rooms.remove_connection(&doc_id, connection.id);
+                    rooms.remove_connection(&doc_id, connection.id);
 
                     // ? видалення документа з БД
 

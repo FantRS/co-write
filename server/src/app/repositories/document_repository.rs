@@ -54,3 +54,17 @@ where
 
     Ok(())
 }
+
+pub async fn get_change<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<Vec<u8>>>
+where
+    E: PgExecutor<'c>,
+{
+    let res = sqlx::query_scalar!(
+        "SELECT update FROM document_updates WHERE document_id = $1 ORDER BY created_at ASC",
+        id,
+    )
+    .fetch_all(executor)
+    .await?;
+
+    Ok(res)
+}

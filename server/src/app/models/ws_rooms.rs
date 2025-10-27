@@ -21,7 +21,7 @@ impl Rooms {
     }
 
     pub async fn send_change(&self, room_id: &Uuid, connection_id: Uuid, change: Bytes) {
-        if let Some(mut clients) = self.value.get_mut(&room_id) {
+        if let Some(mut clients) = self.value.get_mut(room_id) {
             for conn in clients.iter_mut() {
                 if conn.id != connection_id {
                     let _ = conn.session.binary(change.clone()).await;
