@@ -73,3 +73,15 @@ pub async fn ws_handler(
 
     Ok(res)
 }
+
+pub fn add_connection(app_data: &AppData, id: Uuid, connection: Connection) {
+    let mut room_ref = app_data.rooms.value.entry(id).or_default();
+    let is_new_room = room_ref.is_empty();
+
+    room_ref.push(connection);
+    drop(room_ref);
+
+    if is_new_room {
+        let _ = document_service::run_merge_deamon(app_data, id);
+    }
+}

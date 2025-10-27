@@ -2,7 +2,7 @@ use actix_web::web::Bytes;
 use sqlx::PgExecutor;
 use uuid::Uuid;
 
-use crate::core::app_error::AppResult;
+use crate::{app::models::change::ChangeData, core::app_error::AppResult};
 
 pub async fn create<'c, S, I, E>(title: S, content: I, executor: E) -> AppResult<Uuid>
 where
@@ -30,13 +30,44 @@ where
     let content = sqlx::query_scalar!(
         "SELECT content 
             FROM documents 
-            WHERE id = $1",
+            WHERE id = $1
+            ORDER BY id ASC",
         id
     )
     .fetch_one(executor)
     .await?;
 
     Ok(content)
+}
+
+pub async fn update<'c, E>(id: Uuid, content: Vec<u8>, executor: E) -> AppResult<()>
+where
+    E: PgExecutor<'c>,
+{
+    sqlx::query!(
+        "UPDATE documents
+        SET 
+            content = $2,
+            updated_at = NOW()
+        WHERE id = $1",
+        id,
+        content.as_slice(),
+    )
+    .execute(executor)
+    .await?;
+
+    Ok(())
+}
+
+pub async fn delete<'c, E>(ids: Vec<Uuid>, executor: E) -> AppResult<()>
+where
+    E: PgExecutor<'c>,
+{
+    sqlx::query!("DELETE FROM document_updates WHERE id = ANY($1)", &ids[..])
+        .execute(executor)
+        .await?;
+
+    Ok(())
 }
 
 pub async fn push_change_in_db<'c, E>(id: Uuid, change: Bytes, executor: E) -> AppResult<()>
@@ -55,12 +86,16 @@ where
     Ok(())
 }
 
-pub async fn get_change<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<Vec<u8>>>
+pub async fn get_change<'c, E>(id: Uuid, executor: E) -> AppResult<Vec<ChangeData>>
 where
     E: PgExecutor<'c>,
 {
-    let res = sqlx::query_scalar!(
-        "SELECT update FROM document_updates WHERE document_id = $1 ORDER BY created_at ASC",
+    let res = sqlx::query_as!(
+        ChangeData,
+        "SELECT id, update 
+            FROM document_updates 
+            WHERE document_id = $1 
+            ORDER BY created_at ASC",
         id,
     )
     .fetch_all(executor)

@@ -3,6 +3,7 @@ use actix_web::{
     http::{StatusCode, header::ContentType},
 };
 use actix_ws::Closed;
+use automerge::AutomergeError;
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -95,6 +96,12 @@ impl From<uuid::Error> for AppError {
 impl From<Closed> for AppError {
     fn from(_: Closed) -> Self {
         Self::NotFound
+    }
+}
+
+impl From<AutomergeError> for AppError {
+    fn from(error: AutomergeError) -> Self {
+        Self::InternalServer(error.to_string())
     }
 }
 
