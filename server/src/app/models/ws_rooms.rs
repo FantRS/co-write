@@ -9,6 +9,7 @@ pub struct Rooms {
 }
 
 impl Rooms {
+    /// Removes a connection from a room. If the room is becomes empty, it is deleted.
     pub fn remove_connection(&self, room_id: &Uuid, connection_id: Uuid) {
         if let Some(mut room_connections) = self.value.get_mut(room_id) {
             room_connections.retain(|connection| connection.id != connection_id);
@@ -20,11 +21,17 @@ impl Rooms {
         }
     }
 
+    /// Send changes to all participants in the room (except for the creator).
     pub async fn send_change(&self, room_id: &Uuid, connection_id: Uuid, change: Bytes) {
-        if let Some(mut clients) = self.value.get_mut(room_id) {
+        if let Some(room) = self.value.get(room_id) {
+            let mut clients: Vec<_> = room.clone();
+            drop(room);
+
             for conn in clients.iter_mut() {
-                if conn.id != connection_id {
-                    let _ = conn.session.binary(change.clone()).await;
+                if conn.id != connection_id
+                    && let Err(err) = conn.session.binary(change.clone()).await
+                {
+                    tracing::warn!("Failed to send change to {connection_id}: {err}");
                 }
             }
         }

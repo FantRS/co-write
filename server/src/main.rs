@@ -13,7 +13,7 @@ async fn main() -> AppResult<()> {
     let addr = format_addr()?;
     let lst = TcpListener::bind(&addr)?;
 
-    println!("Server address: {}", addr);
+    tracing::info!("The server is running at the address: {addr}");
 
     let database_url = env::var("DATABASE_URL")?;
     let pool = database::establish_connection(database_url).await?;
@@ -40,8 +40,8 @@ async fn main() -> AppResult<()> {
 }
 
 fn format_addr() -> AppResult<String> {
-    let host: String = env::var("SERVER_HOST")?;
-    let port: String = env::var("SERVER_PORT")?;
+    let host: String = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let port: String = env::var("SERVER_PORT").unwrap_or_else(|_| "8080".to_string());
 
     Ok(format!("{host}:{port}"))
 }

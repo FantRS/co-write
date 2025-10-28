@@ -14,20 +14,22 @@ use crate::{
     },
 };
 
+/// Сreate a new document and return its id.
 pub async fn create_document<S>(title: S, pool: &PgPool) -> AppResult<Uuid>
 where
     S: AsRef<str>,
 {
-    let mut doc = AutoCommit::new();
-    let content = AutoCommit::save(&mut doc);
+    let content = AutoCommit::new().save();
 
     document_repository::create(title, content, pool).await
 }
 
+/// Retrieving a document from the database by id.
 pub async fn read_document(id: Uuid, pool: &PgPool) -> AppResult<Vec<u8>> {
     document_repository::read(id, pool).await
 }
 
+/// Adding changes to the database and clients.
 pub async fn push_change(
     doc_id: Uuid,
     conn_id: Uuid,
@@ -40,6 +42,7 @@ pub async fn push_change(
     Ok(())
 }
 
+/// Sending recent changes (which have not yet been applied to the document).
 pub async fn send_existing_changes(
     pool: &PgPool,
     session: &mut Session,
@@ -48,21 +51,25 @@ pub async fn send_existing_changes(
     let changes = document_repository::get_change(doc_id, pool).await?;
 
     for change in changes {
-        session.binary(Bytes::from(change.update)).await?;
+        if let Err(err) = session.binary(Bytes::from(change.update)).await {
+            tracing::warn!("Client disconnected while sending changes_updates: {err}");
+            break;
+        }
     }
 
     Ok(())
 }
 
-pub async fn run_merge_deamon(app_data: &AppData, id: Uuid) {
+/// Apply changes to the document in the background every 5 minutes.
+pub fn run_merge(app_data: &AppData, id: Uuid) {
     let cancel_token = app_data.token().child_token();
     let (pool, rooms) = app_data.get_data();
     let interval = Duration::from_secs(300);
 
-    tokio::spawn(async move {
+    actix_rt::spawn(async move {
         tracing::info!("Started merge deamon for {id}");
 
-        loop {
+        while !cancel_token.is_cancelled() {
             tokio::select! {
                 _ = cancel_token.cancelled() => {
                     tracing::info!("Stoping merge deamon for {id} (canceled)");
@@ -83,7 +90,8 @@ pub async fn run_merge_deamon(app_data: &AppData, id: Uuid) {
     });
 }
 
-pub async fn merge_changes(pool: &PgPool, doc_id: Uuid) -> AppResult<()> {
+/// Application of existing changes to the document.
+async fn merge_changes(pool: &PgPool, doc_id: Uuid) -> AppResult<()> {
     let mut tx = pool.begin().await?;
 
     let doc_bytes = document_repository::read(doc_id, pool).await?;
@@ -114,5 +122,6 @@ pub async fn merge_changes(pool: &PgPool, doc_id: Uuid) -> AppResult<()> {
     document_repository::delete(ids, &mut *tx).await?;
 
     tx.commit().await?;
+    tracing::info!("Changes for {doc_id} successfully merged and persisted");
     Ok(())
 }

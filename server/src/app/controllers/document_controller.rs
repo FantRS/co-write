@@ -12,30 +12,27 @@ use crate::{
 #[tracing::instrument(
     name = "create_document",
     skip(app_data),
-    fields(request_id, title)
+    fields(request_id, title = %title)
 )]
 #[utoipa::path(
     post, 
     path = "/api/create",
     request_body(
-        description = "Title for create documnent",
+        description = "Title for create document",
         content_type = "text/plain",
         content = String
     ),
 )]
 pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let app_data = app_data.into_inner();
-    
-    match document_service::create_document(title, &app_data.pool).await {
-        Ok(id) => {
-            tracing::info!("Створено документ з Uuid: {}", &id);
-            Ok(HttpResponse::Ok().body(id.to_string()))
-        },
-        Err(err) => {
-            tracing::error!("Помилка: {}", &err);
-            Err(err)
-        }
+    let resp_res = document_service::create_document(title, &app_data.pool).await;
+
+    match &resp_res {
+        Ok(id) => tracing::info!("Created document with Uuid: {}", &id),
+        Err(err) => tracing::error!("Error: {}", &err),
     }
+
+    Ok(HttpResponse::Created().body(resp_res?.to_string()))
 }
 
 #[tracing::instrument(
@@ -51,15 +48,12 @@ pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResul
 pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let id = id.into_inner();
     let app_data = app_data.into_inner();
-    
-    match document_service::read_document(id, &app_data.pool).await {
-        Ok(document) => {
-            tracing::info!("Документ успішно отриманий з бази данних");
-            Ok(HttpResponse::Ok().json(document))
-        },
-        Err(err) => {
-            tracing::error!("Помилка: {}", &err);
-            Err(err)
-        }
+    let res = document_service::read_document(id, &app_data.pool).await;
+
+    match &res {
+        Ok(_) => tracing::info!("Document successfully retrieved from database"),
+        Err(err) => tracing::error!("Error: {}", &err),
     }
+
+    Ok(HttpResponse::Ok().body(res?))
 }
