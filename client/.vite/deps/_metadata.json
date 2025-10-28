@@ -1,0 +1,15 @@
+{
+  "hash": "a8a7e105",
+  "configHash": "5742361f",
+  "lockfileHash": "7fdaf87a",
+  "browserHash": "ebb24987",
+  "optimized": {
+    "@automerge/automerge": {
+      "src": "../../node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_bundler.js",
+      "file": "@automerge_automerge.js",
+      "fileHash": "2e34a3b4",
+      "needsInterop": false
+    }
+  },
+  "chunks": {}
+}
