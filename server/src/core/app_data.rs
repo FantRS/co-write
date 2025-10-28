@@ -1,4 +1,5 @@
 use sqlx::PgPool;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
     app::models::ws_rooms::Rooms,
@@ -9,6 +10,7 @@ use crate::{
 pub struct AppData {
     pub pool: PgPool,
     pub rooms: Rooms,
+    pub cancel_token: CancellationToken,
 }
 
 impl AppData {
@@ -21,6 +23,10 @@ impl AppData {
         let rooms = self.rooms.clone();
 
         (pool, rooms)
+    }
+
+    pub fn token(&self) -> CancellationToken {
+        self.cancel_token.clone()
     }
 }
 
@@ -36,10 +42,12 @@ impl AppDataBuilder {
             pool: self
                 .pool
                 .ok_or(AppError::InternalServer("PgPool not set".into()))?,
-                
+
             rooms: self
                 .rooms
                 .ok_or(AppError::InternalServer("Rooms not set".into()))?,
+
+            cancel_token: CancellationToken::new(),
         };
 
         Ok(data)

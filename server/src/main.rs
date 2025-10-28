@@ -5,7 +5,7 @@ use server::{
 };
 use std::{env, net::TcpListener};
 
-#[tokio::main]
+#[actix_web::main]
 async fn main() -> AppResult<()> {
     dotenvy::dotenv().ok();
     telemetry::init_logger("debug");
@@ -23,7 +23,20 @@ async fn main() -> AppResult<()> {
         .with_rooms(rooms)
         .build()?;
 
-    server::run(lst, app_data).await
+    let cancel = app_data.token();
+    let server = actix_web::rt::spawn(server::run(lst, app_data.clone()));
+
+    tokio::signal::ctrl_c().await?;
+    tracing::info!("Shutdown signal received");
+
+    cancel.cancel();
+
+    if let Err(err) = server.await {
+        tracing::error!("Server task failed: {err}");
+    }
+
+    tracing::info!("Graceful shutdown complete");
+    Ok(())
 }
 
 fn format_addr() -> AppResult<String> {

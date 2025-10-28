@@ -2,6 +2,8 @@ use actix_web::{
     HttpResponse, ResponseError,
     http::{StatusCode, header::ContentType},
 };
+use actix_ws::Closed;
+use automerge::AutomergeError;
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -88,6 +90,18 @@ impl From<sqlx::Error> for AppError {
 impl From<uuid::Error> for AppError {
     fn from(_: uuid::Error) -> Self {
         Self::BadRequest
+    }
+}
+
+impl From<Closed> for AppError {
+    fn from(_: Closed) -> Self {
+        Self::NotFound
+    }
+}
+
+impl From<AutomergeError> for AppError {
+    fn from(error: AutomergeError) -> Self {
+        Self::InternalServer(error.to_string())
     }
 }
 

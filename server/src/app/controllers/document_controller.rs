@@ -43,12 +43,7 @@ pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResul
     skip(app_data),
     fields(request_id, doc_id = %id)
 )]
-#[utoipa::path(
-    get, 
-    path = "/api/documents/{id}",
-    params(("id" = Uuid, Path, description = "Document ID to get the latest snapshot"))
-)]
-pub async fn get_document(id: Path<String>, app_data: Data<AppData>) -> AppResult<impl Responder> {
+pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let id = id.into_inner();
     let app_data = app_data.into_inner();
     match document_service::read_document(id, &app_data.pool).await {
