@@ -1,5 +1,5 @@
 function serverUrl() {
-    return "localhost:8080";
+    return "localhost:8080/api";
 }
 
 export function webSocketUrl(id) {
