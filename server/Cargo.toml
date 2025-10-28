@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 tokio = { version = "1.47.1", features = ["full"] }
+tokio-util = "0.7"
 actix-cors = "0.7.1"
 actix-web = "4.11.0"
 actix-ws = "0.2"
