@@ -12,7 +12,8 @@ where
         .json()
         .with_span_list(false);
 
-    let env_filter = EnvFilter::try_from_default_env().unwrap_or(default_level.as_ref().into());
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new(default_level.as_ref()));
 
     Registry::default()
         .with(settings_layer)

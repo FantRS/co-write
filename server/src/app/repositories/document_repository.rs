@@ -40,8 +40,9 @@ where
     Ok(content)
 }
 
-pub async fn update<'c, E>(id: Uuid, content: Vec<u8>, executor: E) -> AppResult<()>
+pub async fn update<'c, I, E>(id: Uuid, content: I, executor: E) -> AppResult<()>
 where
+    I: IntoIterator<Item = u8>,
     E: PgExecutor<'c>,
 {
     sqlx::query!(
@@ -51,7 +52,7 @@ where
             updated_at = NOW()
         WHERE id = $1",
         id,
-        content.as_slice(),
+        content.into_iter().collect::<Vec<u8>>(),
     )
     .execute(executor)
     .await?;
@@ -59,13 +60,17 @@ where
     Ok(())
 }
 
-pub async fn delete<'c, E>(ids: Vec<Uuid>, executor: E) -> AppResult<()>
+pub async fn delete<'c, I, E>(ids: I, executor: E) -> AppResult<()>
 where
+    I: IntoIterator<Item = Uuid>,
     E: PgExecutor<'c>,
 {
-    sqlx::query!("DELETE FROM document_updates WHERE id = ANY($1)", &ids[..])
-        .execute(executor)
-        .await?;
+    sqlx::query!(
+        "DELETE FROM document_updates WHERE id = ANY($1)",
+        &ids.into_iter().collect::<Vec<Uuid>>(),
+    )
+    .execute(executor)
+    .await?;
 
     Ok(())
 }
