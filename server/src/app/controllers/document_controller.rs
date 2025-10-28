@@ -18,7 +18,7 @@ use crate::{
     post, 
     path = "/api/create",
     request_body(
-        description = "Username for create user",
+        description = "Title for create documnent",
         content_type = "text/plain",
         content = String
     ),
@@ -51,6 +51,7 @@ pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResul
 pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let id = id.into_inner();
     let app_data = app_data.into_inner();
+    
     match document_service::read_document(id, &app_data.pool).await {
         Ok(document) => {
             tracing::info!("Документ успішно отриманий з бази данних");

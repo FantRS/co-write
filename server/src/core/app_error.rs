@@ -3,7 +3,6 @@ use actix_web::{
     http::{StatusCode, header::ContentType},
 };
 use actix_ws::Closed;
-use automerge::AutomergeError;
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -99,12 +98,6 @@ impl From<Closed> for AppError {
     }
 }
 
-impl From<AutomergeError> for AppError {
-    fn from(error: AutomergeError) -> Self {
-        Self::InternalServer(error.to_string())
-    }
-}
-
 macro_rules! impl_from {
     ( $e_type:ty ) => {
         impl From<$e_type> for AppError {
@@ -118,3 +111,4 @@ macro_rules! impl_from {
 impl_from!(std::env::VarError);
 impl_from!(std::io::Error);
 impl_from!(actix_web::Error);
+impl_from!(automerge::AutomergeError);

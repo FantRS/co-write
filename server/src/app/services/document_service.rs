@@ -8,41 +8,36 @@ use uuid::Uuid;
 
 use crate::{
     app::{models::change::ChangeData, repositories::document_repository},
-    core::{app_data::AppData, app_error::{AppError, AppResult}},
+    core::{
+        app_data::AppData,
+        app_error::{AppError, AppResult},
+    },
 };
-
-fn create_empty_document() -> Vec<u8> {
-    let mut doc = AutoCommit::new();
-
-    AutoCommit::save(&mut doc)
-}
 
 pub async fn create_document<S>(title: S, pool: &PgPool) -> AppResult<Uuid>
 where
     S: AsRef<str>,
 {
-    let content = create_empty_document();
-    let resp = document_repository::create(title, content, pool).await?;
+    let mut doc = AutoCommit::new();
+    let content = AutoCommit::save(&mut doc);
 
-    Ok(resp)
+    document_repository::create(title, content, pool).await
 }
 
 pub async fn read_document(id: Uuid, pool: &PgPool) -> AppResult<Vec<u8>> {
-    let resp = document_repository::read(id, pool).await?;
-
-    Ok(resp)
+    document_repository::read(id, pool).await
 }
 
-pub async fn push_change(doc_id: Uuid, conn_id: Uuid, change: Bytes, app_data: &AppData) {
-    if let Err(err) =
-        document_repository::push_change_in_db(doc_id, change.clone(), &app_data.pool).await
-    {
-        tracing::error!("{err}")
-    } else {
-        tracing::info!("user changes added");
+pub async fn push_change(
+    doc_id: Uuid,
+    conn_id: Uuid,
+    change: Bytes,
+    app_data: &AppData,
+) -> AppResult<()> {
+    document_repository::push_change_in_db(doc_id, change.clone(), &app_data.pool).await?;
+    app_data.rooms.send_change(&doc_id, conn_id, change).await;
 
-        app_data.rooms.send_change(&doc_id, conn_id, change).await;
-    }
+    Ok(())
 }
 
 pub async fn send_existing_changes(

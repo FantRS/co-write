@@ -1,9 +1,9 @@
 use actix_web::{
-    HttpRequest, Responder,
-    web::{self, Path},
+    HttpRequest, Responder, ResponseError, web::{self, Path}
 };
 use actix_ws::{Message, handle};
 use futures_util::StreamExt as _;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
@@ -44,21 +44,27 @@ pub async fn ws_handler(
         .or_default()
         .push(connection.clone());
 
-    let _ = document_service::send_existing_changes(&pool, &mut session, doc_id).await;
+    document_service::send_existing_changes(&pool, &mut session, doc_id).await?;
 
     actix_rt::spawn(async move {
         while let Some(msg) = msg_stream.next().await {
             match msg {
+                // OnReceivedText
                 Ok(Message::Text(text)) => {
                     tracing::debug!("Received message: {text}");
-                    let _ = session.text(text).await;
+                    _ = session.text(text).await;
                 }
+                // OnReceivedBinary
                 Ok(Message::Binary(bin)) => match automerge::sync::Message::decode(&bin.clone()) {
                     Ok(_) => {
-                        document_service::push_change(doc_id, connection.id, bin, &app_data).await
+                        let push_result = document_service::push_change(doc_id, connection.id, bin, &app_data).await;
+                        let response: Response = push_result.into();
+                        let json_response = serde_json::to_string(&response).unwrap();
+                        _ = session.text(json_response).await;
                     }
                     Err(err) => tracing::error!("Failed to decode sync message: {err:?}"),
                 },
+                // OnCloseWebSocketConnection
                 Ok(Message::Close(reason)) => {
                     rooms.remove_connection(&doc_id, connection.id);
 
@@ -67,6 +73,7 @@ pub async fn ws_handler(
                     tracing::info!("WebSocket closed: {reason:?}");
                     break;
                 }
+                // OnErrorWebSocketConnection
                 Err(err) => {
                     tracing::error!("Errors WebSocket: {err}");
                     break;
@@ -79,7 +86,7 @@ pub async fn ws_handler(
     Ok(res)
 }
 
-pub fn add_connection(app_data: &AppData, id: Uuid, connection: Connection) {
+fn add_connection(app_data: &AppData, id: Uuid, connection: Connection) {
     let mut room_ref = app_data.rooms.value.entry(id).or_default();
     let is_new_room = room_ref.is_empty();
 
@@ -88,5 +95,30 @@ pub fn add_connection(app_data: &AppData, id: Uuid, connection: Connection) {
 
     if is_new_room {
         let _ = document_service::run_merge_deamon(app_data, id);
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Response {
+    status: u16,
+    message: String,
+}
+
+impl<T> From<AppResult<T>> for Response {
+    fn from(value: AppResult<T>) -> Self {
+        match value {
+            Ok(_) => {
+                Self {
+                    status: 200,
+                    message: "Ok".into()
+                }
+            },
+            Err(e) => {
+                Self {
+                    status: e.status_code().as_u16(),
+                    message: e.to_string()
+                }
+            }
+        }
     }
 }
