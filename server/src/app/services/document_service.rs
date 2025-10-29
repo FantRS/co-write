@@ -1,6 +1,6 @@
 use actix_web::web::Bytes;
 use actix_ws::Session;
-use automerge::{AutoCommit, Change};
+use automerge::{AutoCommit, sync::SyncDoc};
 use sqlx::PgPool;
 use std::time::Duration;
 use tokio::time;
@@ -8,10 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     app::{models::change::ChangeData, repositories::document_repository},
-    core::{
-        app_data::AppData,
-        app_error::{AppError, AppResult},
-    },
+    core::{app_data::AppData, app_error::AppResult},
 };
 
 /// Сreate a new document and return its id.
@@ -69,7 +66,7 @@ pub async fn send_existing_changes(
 pub fn run_merge(id: Uuid, app_data: &AppData) {
     let cancel_token = app_data.token().child_token();
     let (pool, rooms) = app_data.get_data();
-    let interval = Duration::from_secs(300);
+    let interval = Duration::from_secs(30);
 
     actix_rt::spawn(async move {
         tracing::info!("Started merge deamon for {id}");
@@ -105,23 +102,17 @@ async fn merge_changes(doc_id: Uuid, pool: &PgPool) -> AppResult<()> {
     let changes_data = document_repository::get_change(doc_id, pool).await?;
     if changes_data.is_empty() {
         tracing::debug!("No new changes for {doc_id}");
-
         tx.commit().await?;
-        
+
         return Ok(());
     }
 
     let (ids, changes_bytes) = ChangeData::split_data(changes_data);
-    let changes: Vec<Change> = changes_bytes
-        .into_iter()
-        .map(|change| {
-            Change::from_bytes(change)
-                .map_err(|e| AppError::InternalServer(format!("Failed deserialize change: {e}")))
-        })
-        .collect::<AppResult<Vec<_>>>()?;
+    let mut peer_id = automerge::sync::State::new();
 
-    for change in changes {
-        doc.apply_changes(vec![change])?;
+    for bin in changes_bytes {
+        let message = automerge::sync::Message::decode(&bin)?;
+        doc.sync().receive_sync_message(&mut peer_id, message)?
     }
 
     document_repository::update(doc_id, doc.save(), &mut *tx).await?;
