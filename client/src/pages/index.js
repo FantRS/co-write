@@ -1,5 +1,5 @@
-import { createDocEndpoint } from "../core/paths.js";
-import { showToast } from "../other/showToast.js";
+import { createDocEndpoint } from "../configs/paths.js";
+import { showToast } from "../utils/showToast.js";
 
 class LobbyManager {
     constructor() {

@@ -1,7 +1,7 @@
 console.log("=== EDITOR SCRIPT LOADING ===");
 
-import { showToast } from "../other/showToast.js";
-import { webSocketUrl } from "../core/paths.js";
+import { showToast } from "../utils/showToast.js";
+import { webSocketUrl } from "../configs/paths.js";
 
 console.log("=== IMPORTS LOADED, LOADING AUTOMERGE ===");
 
@@ -151,29 +151,7 @@ class Editor {
         
         try {
             const message = new Uint8Array(data);
-            console.log("Binary message size:", message.length, "First bytes:", Array.from(message.slice(0, 4)));
-            
-            // Check if this is a JSON response from server (starts with '{' = byte 123)
-            if (message[0] === 123) {
-                // This is a JSON status response, not an Automerge sync message
-                const text = new TextDecoder().decode(message);
-                console.log("Received JSON status response:", text);
-                try {
-                    const statusData = JSON.parse(text);
-                    if (statusData.status && statusData.status !== 200) {
-                        showToast(`Помилка: ${statusData.message}`);
-                    }
-                } catch (e) {
-                    console.error("Failed to parse JSON status:", e);
-                }
-                return; // Don't try to process as Automerge message
-            }
-            
-            // Check if this is an Automerge sync message (should start with [66, 67] or similar)
-            if (message.length < 2) {
-                console.warn("Binary message too short to be Automerge sync");
-                return;
-            }
+            console.log("Sync message size:", message.length);
             
             // Apply received sync message to our document
             const [nextDoc, nextSyncState] = Automerge.receiveSyncMessage(
