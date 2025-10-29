@@ -25,6 +25,7 @@ class LobbyManager {
         });
     }
 
+    // == HANDLE CREATE DOCUMENT ==
     async handleCreateDocument() {
         const name = this.docNameInput.value.trim();
 
@@ -60,6 +61,7 @@ class LobbyManager {
         }
     }
 
+    // == EXTRACT DOCUMENT ID ==
     extractDocumentId(input) {
         if (/^[a-zA-Z0-9-_]+$/.test(input)) {
             return input;
@@ -75,12 +77,13 @@ class LobbyManager {
     }
 }
 
-// Initialize lobby when DOM is loaded
+// == INITIALIZING LOBBY ==
 function initLobby() {
     new LobbyManager();
 }
 
-if (document.readyState === 'loading') {
+// == CHECKING IF DOM LOADED ==
+if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initLobby);
 } else {
     initLobby();
