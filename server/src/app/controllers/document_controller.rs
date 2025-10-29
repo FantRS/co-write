@@ -57,3 +57,26 @@ pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<
 
     Ok(HttpResponse::Ok().body(res?))
 }
+
+#[tracing::instrument(
+    name = "get_document_title",
+    skip(app_data),
+    fields(request_id, doc_id = %id)
+)]
+#[utoipa::path(
+    get, 
+    path = "/api/documents/{id}/title",
+    params(("id" = Uuid, Path, description = "Document ID to get the title"))
+)]
+pub async fn get_document_title(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
+    let id = id.into_inner();
+    let app_data = app_data.into_inner();
+    let res = document_service::get_document_title(id, &app_data.pool).await;
+
+    match &res {
+        Ok(title) => tracing::info!("Document title retrieved: {}", title),
+        Err(err) => tracing::error!("Error: {}", &err),
+    }
+
+    Ok(HttpResponse::Ok().body(res?))
+}

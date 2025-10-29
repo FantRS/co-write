@@ -29,6 +29,11 @@ pub async fn read_document(id: Uuid, pool: &PgPool) -> AppResult<Vec<u8>> {
     document_repository::read(id, pool).await
 }
 
+/// Get document title by id.
+pub async fn get_document_title(id: Uuid, pool: &PgPool) -> AppResult<String> {
+    document_repository::get_title(id, pool).await
+}
+
 /// Adding changes to the database and clients.
 pub async fn push_change(
     doc_id: Uuid,

@@ -40,6 +40,22 @@ where
     Ok(content)
 }
 
+pub async fn get_title<'c, E>(id: Uuid, executor: E) -> AppResult<String>
+where
+    E: PgExecutor<'c>,
+{
+    let title = sqlx::query_scalar!(
+        "SELECT title 
+            FROM documents 
+            WHERE id = $1",
+        id
+    )
+    .fetch_one(executor)
+    .await?;
+
+    Ok(title)
+}
+
 pub async fn update<'c, I, E>(id: Uuid, content: I, executor: E) -> AppResult<()>
 where
     I: IntoIterator<Item = u8>,

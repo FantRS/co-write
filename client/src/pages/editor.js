@@ -1,11 +1,11 @@
 import { showToast } from "../utils/showToast.js";
-import { webSocketUrl } from "../configs/paths.js";
+import { webSocketUrl, getDocumentTitleEndpoint } from "../configs/paths.js";
 import * as Automerge from "@automerge/automerge";
 
 class Editor {
     constructor() {
         this.socket = null;
-        
+
         // Automerge state
         try {
             this.doc = Automerge.from({ text: "" });
@@ -16,9 +16,10 @@ class Editor {
             this.doc = { text: "" };
             this.syncState = null;
         }
-        
+
         this.initializeElements();
         this.initializeEventListeners();
+        this.loadDocumentTitle();
         this.setupWebSocket();
 
         this.timeout = null;
@@ -70,12 +71,29 @@ class Editor {
         });
     }
 
+    // == LOAD DOCUMENT TITLE ==
+    async loadDocumentTitle() {
+        try {
+            const response = await fetch(getDocumentTitleEndpoint(this.documentId));
+            if (response.ok) {
+                const title = await response.text();
+                this.documentTitle.textContent = title;
+            } else {
+                console.error("Failed to load document title");
+                this.documentTitle.textContent = "Без назви";
+            }
+        } catch (error) {
+            console.error("Error loading document title:", error);
+            this.documentTitle.textContent = "Без назви";
+        }
+    }
+
     // == SETUP WEBSOCKET LISTENERS ==
     setupWebSocket() {
         const wsUrl = webSocketUrl(this.documentId);
-        
+
         this.socket = new WebSocket(wsUrl);
-        this.socket.binaryType = 'arraybuffer';
+        this.socket.binaryType = "arraybuffer";
 
         this.socket.onopen = () => {
             this.updateConnectionStatus("connected");
@@ -102,8 +120,7 @@ class Editor {
             // Handle binary messages (Automerge sync)
             if (event.data instanceof ArrayBuffer) {
                 this.handleBinaryMessage(event.data);
-            } 
-            else if (typeof event.data === "string") {
+            } else if (typeof event.data === "string") {
                 try {
                     const data = JSON.parse(event.data);
                     if (data.status && data.status !== 200) {
@@ -119,7 +136,7 @@ class Editor {
     async handleBinaryMessage(data) {
         try {
             const message = new Uint8Array(data);
-            
+
             if (message[0] === 123) {
                 // This is a JSON status response, not an Automerge sync message
                 const text = new TextDecoder().decode(message);
@@ -133,22 +150,22 @@ class Editor {
                 }
                 return;
             }
-            
+
             if (message.length < 2) {
                 console.warn("Binary message too short to be Automerge sync");
                 return;
             }
-            
+
             // Apply received sync message to our document
             const [nextDoc, nextSyncState] = Automerge.receiveSyncMessage(
                 this.doc,
                 this.syncState,
                 message
             );
-            
+
             this.doc = nextDoc;
             this.syncState = nextSyncState;
-            
+
             this.updateEditorFromDoc();
             this.sendSyncMessage();
             this.updateSyncStatus("Синхронізовано");
@@ -169,9 +186,9 @@ class Editor {
                 this.doc,
                 this.syncState
             );
-            
+
             this.syncState = nextSyncState;
-            
+
             if (message) {
                 this.socket.send(message);
             }
@@ -183,20 +200,20 @@ class Editor {
     // == UPDATE EDITOR FROM DOC ==
     updateEditorFromDoc() {
         this.isUpdatingFromRemote = true;
-        
+
         const text = this.doc.text || "";
-        
+
         // Only update if content is different to prevent cursor jumping
         if (this.editorArea.value !== text) {
             const start = this.editorArea.selectionStart;
             const end = this.editorArea.selectionEnd;
-            
+
             this.editorArea.value = text;
-            
+
             // Restore cursor position
             this.editorArea.setSelectionRange(start, end);
         }
-        
+
         this.isUpdatingFromRemote = false;
     }
 
@@ -211,21 +228,21 @@ class Editor {
 
         this.timeout = setTimeout(() => {
             const newText = this.editorArea.value;
-            
+
             try {
                 // Update Automerge document
                 this.doc = Automerge.change(this.doc, (doc) => {
                     doc.text = newText;
                 });
-                
+
                 // Send sync message
                 this.sendSyncMessage();
-                
+
                 this.updateSyncStatus("Синхронізовано");
             } catch (error) {
                 console.error("Failed to update document:", error);
             }
-            
+
             this.timeout = null;
         }, 300);
     }
@@ -264,7 +281,7 @@ function initEditor() {
 }
 
 // == CHECKING IF DOM LOADED ==
-if (document.readyState === 'loading') {
+if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initEditor);
 } else {
     initEditor();

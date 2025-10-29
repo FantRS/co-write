@@ -13,3 +13,7 @@ export function getSnapshotEndpoint() {
 export function createDocEndpoint() {
     return `http://${serverUrl()}/documents/create`;
 }
+
+export function getDocumentTitleEndpoint(id) {
+    return `http://${serverUrl()}/documents/${id}/title`;
+}
