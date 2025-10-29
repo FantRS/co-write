@@ -40,7 +40,7 @@ pub async fn ws_handler(
     };
 
     add_connection(&app_data, doc_id, connection.clone());
-    document_service::send_existing_changes(&pool, &mut session, doc_id).await?;
+    document_service::send_existing_changes(doc_id, &mut session, &pool).await?;
 
     actix_rt::spawn(async move {
         while let Some(msg) = msg_stream.next().await {
@@ -97,7 +97,7 @@ fn add_connection(app_data: &AppData, id: Uuid, connection: Connection) {
     drop(room_ref);
 
     if is_new_room {
-        document_service::run_merge(app_data, id);
+        document_service::run_merge(id, app_data);
     }
 }
 

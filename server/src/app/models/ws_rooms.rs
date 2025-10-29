@@ -4,6 +4,7 @@ use dashmap::DashMap;
 use std::sync::Arc;
 use uuid::Uuid;
 
+#[derive(Default)]
 pub struct Rooms {
     pub value: Arc<DashMap<Uuid, Vec<Connection>>>,
 }
@@ -38,18 +39,10 @@ impl Rooms {
     }
 }
 
-impl Default for Rooms {
-    fn default() -> Self {
-        Self {
-            value: Arc::new(DashMap::new()),
-        }
-    }
-}
-
 impl Clone for Rooms {
     fn clone(&self) -> Self {
         Self {
-            value: self.value.clone(),
+            value: Arc::clone(&self.value),
         }
     }
 }

@@ -2,7 +2,6 @@ use actix_web::{
     HttpResponse, ResponseError,
     http::{StatusCode, header::ContentType},
 };
-use actix_ws::Closed;
 
 pub type AppResult<T> = Result<T, AppError>;
 
@@ -86,23 +85,18 @@ impl From<sqlx::Error> for AppError {
     }
 }
 
-impl From<uuid::Error> for AppError {
-    fn from(_: uuid::Error) -> Self {
-        Self::BadRequest
-    }
-}
-
-impl From<Closed> for AppError {
-    fn from(_: Closed) -> Self {
-        Self::NotFound
-    }
-}
-
 macro_rules! impl_from {
     ( $e_type:ty ) => {
         impl From<$e_type> for AppError {
             fn from(error: $e_type) -> Self {
                 Self::InternalServer(error.to_string())
+            }
+        }
+    };
+    ( $e_type:ty, $i_type:expr ) => {
+        impl From<$e_type> for AppError {
+            fn from(_: $e_type) -> Self {
+                $i_type
             }
         }
     };
@@ -112,3 +106,7 @@ impl_from!(std::env::VarError);
 impl_from!(std::io::Error);
 impl_from!(actix_web::Error);
 impl_from!(automerge::AutomergeError);
+impl_from!(std::num::ParseIntError);
+
+impl_from!(actix_ws::Closed, AppError::NotFound);
+impl_from!(uuid::Error, AppError::BadRequest);

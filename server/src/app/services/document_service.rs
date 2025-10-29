@@ -3,7 +3,7 @@ use actix_ws::Session;
 use automerge::{AutoCommit, Change};
 use sqlx::PgPool;
 use std::time::Duration;
-use tokio::time::sleep;
+use tokio::time;
 use uuid::Uuid;
 
 use crate::{
@@ -49,9 +49,9 @@ pub async fn push_change(
 
 /// Sending recent changes (which have not yet been applied to the document).
 pub async fn send_existing_changes(
-    pool: &PgPool,
-    session: &mut Session,
     doc_id: Uuid,
+    session: &mut Session,
+    pool: &PgPool,
 ) -> AppResult<()> {
     let changes = document_repository::get_change(doc_id, pool).await?;
 
@@ -66,7 +66,7 @@ pub async fn send_existing_changes(
 }
 
 /// Apply changes to the document in the background every 5 minutes.
-pub fn run_merge(app_data: &AppData, id: Uuid) {
+pub fn run_merge(id: Uuid, app_data: &AppData) {
     let cancel_token = app_data.token().child_token();
     let (pool, rooms) = app_data.get_data();
     let interval = Duration::from_secs(300);
@@ -80,13 +80,13 @@ pub fn run_merge(app_data: &AppData, id: Uuid) {
                     tracing::info!("Stoping merge deamon for {id} (canceled)");
                     break;
                 }
-                _ = sleep(interval) => {
+                _ = time::sleep(interval) => {
                     if rooms.value.get(&id).is_none() {
                         tracing::info!("Stoping merge deamon for {id}");
                         break;
                     }
 
-                    if let Err(err) = merge_changes(&pool, id).await {
+                    if let Err(err) = merge_changes(id, &pool).await {
                         tracing::error!("Merge error for {id}: {err:?}");
                     }
                 }
@@ -96,7 +96,7 @@ pub fn run_merge(app_data: &AppData, id: Uuid) {
 }
 
 /// Application of existing changes to the document.
-async fn merge_changes(pool: &PgPool, doc_id: Uuid) -> AppResult<()> {
+async fn merge_changes(doc_id: Uuid, pool: &PgPool) -> AppResult<()> {
     let mut tx = pool.begin().await?;
 
     let doc_bytes = document_repository::read(doc_id, pool).await?;
@@ -107,6 +107,7 @@ async fn merge_changes(pool: &PgPool, doc_id: Uuid) -> AppResult<()> {
         tracing::debug!("No new changes for {doc_id}");
 
         tx.commit().await?;
+        
         return Ok(());
     }
 
@@ -128,5 +129,6 @@ async fn merge_changes(pool: &PgPool, doc_id: Uuid) -> AppResult<()> {
 
     tx.commit().await?;
     tracing::info!("Changes for {doc_id} successfully merged and persisted");
+
     Ok(())
 }

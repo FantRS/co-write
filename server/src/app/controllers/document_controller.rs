@@ -48,14 +48,14 @@ pub async fn create_document(title: String, app_data: Data<AppData>) -> AppResul
 pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let id = id.into_inner();
     let app_data = app_data.into_inner();
-    let res = document_service::read_document(id, &app_data.pool).await;
+    let resp_res = document_service::read_document(id, &app_data.pool).await;
 
-    match &res {
+    match &resp_res {
         Ok(_) => tracing::info!("Document successfully retrieved from database"),
         Err(err) => tracing::error!("Error: {}", &err),
     }
 
-    Ok(HttpResponse::Ok().body(res?))
+    Ok(HttpResponse::Ok().body(resp_res?))
 }
 
 #[tracing::instrument(
@@ -71,12 +71,12 @@ pub async fn get_document(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<
 pub async fn get_document_title(id: Path<Uuid>, app_data: Data<AppData>) -> AppResult<impl Responder> {
     let id = id.into_inner();
     let app_data = app_data.into_inner();
-    let res = document_service::get_document_title(id, &app_data.pool).await;
+    let resp_res = document_service::get_document_title(id, &app_data.pool).await;
 
-    match &res {
+    match &resp_res {
         Ok(title) => tracing::info!("Document title retrieved: {}", title),
         Err(err) => tracing::error!("Error: {}", &err),
     }
 
-    Ok(HttpResponse::Ok().body(res?))
+    Ok(HttpResponse::Ok().body(resp_res?))
 }

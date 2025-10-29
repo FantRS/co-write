@@ -82,7 +82,8 @@ where
     E: PgExecutor<'c>,
 {
     sqlx::query!(
-        "DELETE FROM document_updates WHERE id = ANY($1)",
+        "DELETE FROM document_updates 
+            WHERE id = ANY($1)",
         &ids.into_iter().collect::<Vec<Uuid>>(),
     )
     .execute(executor)
