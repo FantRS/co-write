@@ -106,6 +106,8 @@ impl_from!(std::env::VarError);
 impl_from!(std::io::Error);
 impl_from!(actix_web::Error);
 impl_from!(automerge::AutomergeError);
+impl_from!(automerge::sync::ReadMessageError);
+impl_from!(automerge::LoadChangeError);
 impl_from!(std::num::ParseIntError);
 
 impl_from!(actix_ws::Closed, AppError::NotFound);
