@@ -1,85 +1,60 @@
+console.log("=== EDITOR SCRIPT LOADING ===");
+
 import { showToast } from "../other/showToast.js";
 import { webSocketUrl } from "../core/paths.js";
 
-console.log("editor.js module loaded");
+console.log("=== IMPORTS LOADED, LOADING AUTOMERGE ===");
+
+import * as Automerge from "@automerge/automerge";
+
+console.log("=== AUTOMERGE LOADED ===", Automerge);
 
 class Editor {
     constructor() {
-        console.log("Editor constructor called");
+        console.log("Editor initializing...");
         this.socket = null;
-        this.doc = null;
-        this.syncState = null;
-        this.isLocalChange = false;
-        this.Automerge = null;
+        
+        // Automerge state
+        try {
+            console.log("Initializing Automerge document...");
+            this.doc = Automerge.from({ text: "" });
+            this.syncState = Automerge.initSyncState();
+            console.log("Automerge initialized successfully", this.doc);
+        } catch (error) {
+            console.error("Failed to initialize Automerge:", error);
+            // Continue anyway to test other functionality
+            this.doc = { text: "" };
+            this.syncState = null;
+        }
         
         this.initializeElements();
         this.initializeEventListeners();
-        this.loadAutomerge();
-        console.log("Editor initialized successfully");
-    }
+        this.setupWebSocket();
 
-    // == LOAD AUTOMERGE ASYNCHRONOUSLY ==
-    async loadAutomerge() {
-        try {
-            console.log("Loading Automerge...");
-            const AutomergeModule = await import("@automerge/automerge");
-            this.Automerge = AutomergeModule;
-            console.log("Automerge loaded successfully", Object.keys(AutomergeModule));
-            
-            this.initializeAutomerge();
-            this.setupWebSocket();
-        } catch (error) {
-            console.error("Failed to load Automerge:", error);
-            showToast("Помилка завантаження Automerge: " + error.message);
-        }
-    }
-
-    // == INIT AUTOMERGE DOCUMENT ==
-    initializeAutomerge() {
-        try {
-            console.log("Initializing Automerge document...");
-            // Create a new Automerge document with a text field
-            this.doc = this.Automerge.from({
-                content: ""
-            });
-            
-            // Initialize sync state
-            this.syncState = this.Automerge.initSyncState();
-            
-            console.log("Automerge initialized", this.doc);
-        } catch (error) {
-            console.error("Error initializing Automerge:", error);
-            showToast("Помилка ініціалізації документа");
-        }
+        this.timeout = null;
+        this.isUpdatingFromRemote = false;
     }
 
     // == INIT ELEMENTS BY ID ==
     initializeElements() {
-        console.log("Initializing elements...");
         this.editorArea = document.getElementById("editorArea");
         this.documentTitle = document.getElementById("documentTitle");
         this.connectionStatus = document.getElementById("connectionStatus");
-        this.connectedUsers = document.getElementById("connectedUsers");
         this.syncStatus = document.getElementById("syncStatus");
         this.copyLinkBtn = document.getElementById("copyLink");
         this.backToLobbyBtn = document.getElementById("backToLobby");
         this.toast = document.getElementById("toast");
 
-        console.log("Elements found:", {
-            editorArea: !!this.editorArea,
-            copyLinkBtn: !!this.copyLinkBtn,
-            backToLobbyBtn: !!this.backToLobbyBtn
-        });
-
         // Get document ID from URL
         this.documentId = new URL(window.location.href).searchParams.get("id");
-        console.log("Document ID:", this.documentId);
-        
         if (!this.documentId) {
             showToast("Документ не знайдено", 3000);
+            console.error("No document ID in URL");
             setTimeout(() => {
                 window.location.href = "/";
             }, 3000);
+        } else {
+            console.log("Document ID:", this.documentId);
         }
     }
 
@@ -87,32 +62,24 @@ class Editor {
     initializeEventListeners() {
         console.log("Setting up event listeners...");
         
-        if (this.editorArea) {
-            this.editorArea.addEventListener("input", () => {
-                this.handleTextareaInput();
-            });
-            console.log("✓ Editor area listener added");
-        }
+        this.editorArea.addEventListener("input", () => {
+            console.log("Text input detected");
+            this.handleTextChange();
+        });
 
-        if (this.copyLinkBtn) {
-            this.copyLinkBtn.addEventListener("click", () => {
-                console.log("Copy link button clicked");
-                const url = window.location.href;
-                navigator.clipboard
-                    .writeText(url)
-                    .then(() => showToast("Посилання скопійовано"))
-                    .catch(() => showToast("Помилка копіювання посилання"));
-            });
-            console.log("✓ Copy link listener added");
-        }
+        this.copyLinkBtn.addEventListener("click", () => {
+            console.log("Copy link clicked");
+            const url = window.location.href;
+            navigator.clipboard
+                .writeText(url)
+                .then(() => showToast("Посилання скопійовано"))
+                .catch(() => showToast("Помилка копіювання посилання"));
+        });
 
-        if (this.backToLobbyBtn) {
-            this.backToLobbyBtn.addEventListener("click", () => {
-                console.log("Back to lobby button clicked");
-                window.location.href = "/client/index.html";
-            });
-            console.log("✓ Back to lobby listener added");
-        }
+        this.backToLobbyBtn.addEventListener("click", () => {
+            console.log("Back to lobby clicked");
+            window.location.href = "/";
+        });
 
         window.addEventListener("beforeunload", () => {
             if (this.socket) {
@@ -120,221 +87,206 @@ class Editor {
             }
         });
         
-        console.log("All event listeners initialized");
+        console.log("Event listeners set up successfully");
     }
 
     // == SETUP WEBSOCKET LISTENERS ==
     setupWebSocket() {
-        if (!this.Automerge) {
-            console.error("Cannot setup WebSocket: Automerge not loaded");
-            return;
-        }
-
-        console.log("Setting up WebSocket...");
-        this.socket = new WebSocket(webSocketUrl(this.documentId));
-        this.socket.binaryType = "arraybuffer";
-
-        console.log("Connecting to:", webSocketUrl(this.documentId));
+        console.log("Setting up WebSocket for document:", this.documentId);
+        const wsUrl = webSocketUrl(this.documentId);
+        console.log("WebSocket URL:", wsUrl);
+        
+        this.socket = new WebSocket(wsUrl);
+        this.socket.binaryType = 'arraybuffer';
 
         this.socket.onopen = () => {
-            console.log("✓ WebSocket connected");
-            console.log("📡 Ready to sync with other clients in room:", this.documentId);
+            console.log("WebSocket connected");
             this.updateConnectionStatus("connected");
             showToast("Підключено до сервера");
-            this.sendSyncMessage();
         };
 
-        this.socket.onclose = () => {
-            console.log("✗ WebSocket closed");
+        this.socket.onclose = (event) => {
+            console.log("WebSocket closed:", event.code, event.reason);
             this.updateConnectionStatus("disconnected");
             showToast("Втрачено з'єднання з сервером");
 
+            // Try to reconnect after 5 seconds
             setTimeout(() => {
+                console.log("Attempting to reconnect...");
                 this.setupWebSocket();
             }, 5000);
         };
 
         this.socket.onerror = (error) => {
-            console.error("✗ WebSocket error:", error);
+            console.error("WebSocket error:", error);
             this.updateConnectionStatus("error");
             showToast("Помилка з'єднання з сервером");
         };
 
         this.socket.onmessage = (event) => {
-            console.log("← WebSocket message received", typeof event.data);
+            console.log("WebSocket message received, type:", typeof event.data);
+            
+            // Handle binary messages (Automerge sync)
             if (event.data instanceof ArrayBuffer) {
-                this.handleBinarySyncMessage(event.data);
-            } else {
+                console.log("Binary message received, size:", event.data.byteLength);
+                this.handleBinaryMessage(event.data);
+            } 
+            // Handle text messages (JSON status/errors)
+            else if (typeof event.data === "string") {
+                console.log("Text message received:", event.data);
                 try {
                     const data = JSON.parse(event.data);
-                    this.handleJsonMessage(data);
+                    if (data.status && data.status !== 200) {
+                        showToast(`Помилка: ${data.message}`);
+                    }
                 } catch (e) {
-                    console.error("Failed to parse message:", e);
+                    console.error("Failed to parse JSON message:", e);
                 }
             }
         };
     }
 
-    // == HANDLE BINARY SYNC MESSAGES ==
-    handleBinarySyncMessage(arrayBuffer) {
+    async handleBinaryMessage(data) {
+        console.log("handleBinaryMessage called");
+        
         try {
-            const message = new Uint8Array(arrayBuffer);
-            console.log("📥 Received binary sync message from another client, length:", message.length);
+            const message = new Uint8Array(data);
+            console.log("Binary message size:", message.length, "First bytes:", Array.from(message.slice(0, 4)));
             
-            const [newDoc, newSyncState, patch] = this.Automerge.receiveSyncMessage(
+            // Check if this is a JSON response from server (starts with '{' = byte 123)
+            if (message[0] === 123) {
+                // This is a JSON status response, not an Automerge sync message
+                const text = new TextDecoder().decode(message);
+                console.log("Received JSON status response:", text);
+                try {
+                    const statusData = JSON.parse(text);
+                    if (statusData.status && statusData.status !== 200) {
+                        showToast(`Помилка: ${statusData.message}`);
+                    }
+                } catch (e) {
+                    console.error("Failed to parse JSON status:", e);
+                }
+                return; // Don't try to process as Automerge message
+            }
+            
+            // Check if this is an Automerge sync message (should start with [66, 67] or similar)
+            if (message.length < 2) {
+                console.warn("Binary message too short to be Automerge sync");
+                return;
+            }
+            
+            // Apply received sync message to our document
+            const [nextDoc, nextSyncState] = Automerge.receiveSyncMessage(
                 this.doc,
                 this.syncState,
                 message
             );
-
-            if (newDoc) {
-                this.doc = newDoc;
-                this.syncState = newSyncState;
-                console.log("✓ Document updated from remote client, patches:", patch?.length || 0);
-                console.log("📄 New document content:", this.doc.content);
-                
-                if (patch && patch.length > 0) {
-                    this.updateTextareaFromDoc();
-                    this.updateSyncStatus("Отримано зміни від іншого користувача");
-                    setTimeout(() => {
-                        this.updateSyncStatus("Синхронізовано");
-                    }, 2000);
-                }
-                
-                this.sendSyncMessage();
-            } else if (newSyncState) {
-                this.syncState = newSyncState;
-                console.log("✓ Sync state updated (no doc changes)");
-            }
+            
+            console.log("Sync message applied successfully");
+            this.doc = nextDoc;
+            this.syncState = nextSyncState;
+            
+            // Update UI with new document content
+            this.updateEditorFromDoc();
+            
+            // Send back our sync state
+            this.sendSyncMessage();
+            
+            this.updateSyncStatus("Синхронізовано");
         } catch (error) {
-            console.error("✗ Error handling sync message:", error);
+            console.error("Failed to handle sync message:", error);
             showToast("Помилка синхронізації");
         }
     }
 
-    // == HANDLE JSON MESSAGES ==
-    handleJsonMessage(data) {
-        console.log("← Handling JSON message", data);
-        
-        // Server sends { status: 200, message: "Ok" } as acknowledgment
-        if (data.status === 200) {
-            console.log("✓ Server acknowledged sync message");
-            return;
-        }
-        
-        switch (data.type) {
-            case "users":
-                this.updateConnectedUsers(data.count);
-                break;
-            case "error":
-                showToast(data.message);
-                break;
-            default:
-                console.log("Unknown message type:", data.type, data);
-        }
-    }
-
-    // == SEND SYNC MESSAGE ==
     sendSyncMessage() {
+        console.log("sendSyncMessage called");
+        
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.log("✗ Cannot send sync message, socket not ready");
-            return;
-        }
-
-        if (!this.Automerge) {
-            console.log("✗ Cannot send sync message, Automerge not loaded");
+            console.log("WebSocket not ready, state:", this.socket?.readyState);
             return;
         }
 
         try {
-            const [nextSyncState, syncMessage] = this.Automerge.generateSyncMessage(
+            const [nextSyncState, message] = Automerge.generateSyncMessage(
                 this.doc,
                 this.syncState
             );
-
-            if (syncMessage) {
-                this.syncState = nextSyncState;
-                console.log("→ Sending sync message, length:", syncMessage.length);
-                this.socket.send(syncMessage);
-            } else {
-                console.log("○ No sync message to send");
-            }
-        } catch (error) {
-            console.error("✗ Error sending sync message:", error);
-        }
-    }
-
-    // == HANDLE TEXTAREA INPUT ==
-    handleTextareaInput() {
-        if (this.isLocalChange) {
-            console.log("○ Skipping input (local change)");
-            return;
-        }
-
-        if (!this.Automerge) {
-            console.log("✗ Cannot handle input: Automerge not loaded");
-            return;
-        }
-
-        console.log("✎ Handling textarea input");
-        this.updateSyncStatus("Синхронізація...");
-
-        try {
-            const textareaContent = this.editorArea.value;
-            const docContent = this.doc.content || "";
-
-            this.applyTextChanges(docContent, textareaContent);
-            this.sendSyncMessage();
-            this.updateSyncStatus("Синхронізовано");
-        } catch (error) {
-            console.error("✗ Error syncing content:", error);
-            this.updateSyncStatus("Помилка синхронізації");
-        }
-    }
-
-    // == APPLY TEXT CHANGES TO AUTOMERGE DOC ==
-    applyTextChanges(oldText, newText) {
-        console.log("✎ Applying text changes");
-        this.doc = this.Automerge.change(this.doc, (doc) => {
-            doc.content = newText;
-        });
-        console.log("✓ Document content updated");
-    }
-
-    // == UPDATE TEXTAREA FROM AUTOMERGE DOC ==
-    updateTextareaFromDoc() {
-        this.isLocalChange = true;
-
-        try {
-            const newContent = this.doc.content || "";
-            console.log("← Updating textarea from doc, length:", newContent.length);
             
-            if (this.editorArea.value !== newContent) {
-                const start = this.editorArea.selectionStart;
-                const end = this.editorArea.selectionEnd;
-
-                this.editorArea.value = newContent;
-
-                const newLength = newContent.length;
-                const newStart = Math.min(start, newLength);
-                const newEnd = Math.min(end, newLength);
-                this.editorArea.setSelectionRange(newStart, newEnd);
-                
-                console.log("✓ Textarea updated");
+            this.syncState = nextSyncState;
+            
+            if (message) {
+                console.log("Sending sync message, size:", message.length);
+                this.socket.send(message);
+            } else {
+                console.log("No sync message to send");
             }
-        } finally {
-            this.isLocalChange = false;
+        } catch (error) {
+            console.error("Failed to generate/send sync message:", error);
         }
+    }
+
+    updateEditorFromDoc() {
+        console.log("updateEditorFromDoc called");
+        this.isUpdatingFromRemote = true;
+        
+        const text = this.doc.text || "";
+        console.log("Document text:", text.substring(0, 50) + (text.length > 50 ? "..." : ""));
+        
+        // Only update if content is different to prevent cursor jumping
+        if (this.editorArea.value !== text) {
+            const start = this.editorArea.selectionStart;
+            const end = this.editorArea.selectionEnd;
+            
+            this.editorArea.value = text;
+            
+            // Restore cursor position
+            this.editorArea.setSelectionRange(start, end);
+            console.log("Editor updated with new text");
+        }
+        
+        this.isUpdatingFromRemote = false;
+    }
+
+    handleTextChange() {
+        if (this.isUpdatingFromRemote) {
+            console.log("Ignoring change from remote update");
+            return;
+        }
+
+        console.log("handleTextChange called");
+        this.updateSyncStatus("Синхронізація...");
+        clearTimeout(this.timeout);
+
+        this.timeout = setTimeout(() => {
+            const newText = this.editorArea.value;
+            console.log("Updating document with new text, length:", newText.length);
+            
+            try {
+                // Update Automerge document
+                this.doc = Automerge.change(this.doc, (doc) => {
+                    doc.text = newText;
+                });
+                
+                console.log("Document updated successfully");
+                
+                // Send sync message
+                this.sendSyncMessage();
+                
+                this.updateSyncStatus("Синхронізовано");
+            } catch (error) {
+                console.error("Failed to update document:", error);
+            }
+            
+            this.timeout = null;
+        }, 300);
     }
 
     // == UPDATE INFO ==
     updateConnectionStatus(status) {
-        if (!this.connectionStatus) return;
-        
-        this.connectionStatus.className = "status-chip connection-status " + status;
+        this.connectionStatus.className =
+            "status-chip connection-status " + status;
         const statusText = this.connectionStatus.querySelector(".status-text");
-        if (!statusText) return;
-        
         switch (status) {
             case "connected":
                 statusText.textContent = "Підключено";
@@ -347,34 +299,33 @@ class Editor {
                 break;
         }
     }
-
-    updateConnectedUsers(count) {
-        if (!this.connectedUsers) return;
-        const statusText = this.connectedUsers.querySelector(".status-text");
-        if (statusText) {
-            statusText.textContent = `Користувачів онлайн: ${count}`;
-        }
-    }
-
     updateSyncStatus(status) {
-        if (!this.syncStatus) return;
         const statusText = this.syncStatus.querySelector(".status-text");
-        if (statusText) {
-            statusText.textContent = status;
-        }
+        statusText.textContent = status;
     }
 }
 
 // Initialize editor when DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
-    console.log("=== DOMContentLoaded event fired ===");
+console.log("=== SETTING UP DOMCONTENTLOADED LISTENER ===");
+console.log("Document ready state:", document.readyState);
+
+function initEditor() {
+    console.log("=== DOM CONTENT LOADED, CREATING EDITOR ===");
     try {
         const editor = new Editor();
+        console.log("=== EDITOR CREATED SUCCESSFULLY ===", editor);
         window.editor = editor; // For debugging
-        console.log("=== Editor instance created successfully ===");
     } catch (error) {
-        console.error("=== ERROR creating Editor instance ===");
-        console.error("Error:", error);
-        console.error("Stack:", error.stack);
+        console.error("=== FAILED TO CREATE EDITOR ===", error);
     }
-});
+}
+
+// Check if DOM is already loaded
+if (document.readyState === 'loading') {
+    // DOM is still loading, wait for it
+    document.addEventListener("DOMContentLoaded", initEditor);
+} else {
+    // DOM is already loaded, initialize immediately
+    console.log("=== DOM ALREADY LOADED, INITIALIZING IMMEDIATELY ===");
+    initEditor();
+}

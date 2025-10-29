@@ -52,7 +52,7 @@ class LobbyManager {
 
             // Redirect to editor page
             setTimeout(() => {
-                window.location.href = `./editor.html?id=${documentId}`;
+                window.location.href = `/editor.html?id=${documentId}`;
             }, 500);
         } catch (error) {
             showToast("Помилка створення документа");
@@ -76,6 +76,12 @@ class LobbyManager {
 }
 
 // Initialize lobby when DOM is loaded
-document.addEventListener("DOMContentLoaded", () => {
+function initLobby() {
     new LobbyManager();
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", initLobby);
+} else {
+    initLobby();
+}
