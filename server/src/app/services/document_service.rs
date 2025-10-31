@@ -64,9 +64,14 @@ pub async fn send_existing_changes(
 
 /// Apply changes to the document in the background every 5 minutes.
 pub fn run_merge(id: Uuid, app_data: &AppData) {
+    let interval_secs: u64 = std::env::var("MERGE_INTERVAL_SECS")
+        .ok()
+        .and_then(|val| val.parse().ok())
+        .unwrap_or(30);
+
     let cancel_token = app_data.token().child_token();
     let (pool, rooms) = app_data.get_data();
-    let interval = Duration::from_secs(30);
+    let interval = Duration::from_secs(interval_secs);
 
     actix_rt::spawn(async move {
         tracing::info!("Started merge deamon for {id}");
@@ -74,17 +79,21 @@ pub fn run_merge(id: Uuid, app_data: &AppData) {
         while !cancel_token.is_cancelled() {
             tokio::select! {
                 _ = cancel_token.cancelled() => {
+                    if let Err(err) = merge_changes(id, &pool).await {
+                        tracing::error!("Merge error for {id}: {err:?}");
+                    }
+
                     tracing::info!("Stoping merge deamon for {id} (canceled)");
                     break;
                 }
                 _ = time::sleep(interval) => {
+                    if let Err(err) = merge_changes(id, &pool).await {
+                        tracing::error!("Merge error for {id}: {err:?}");
+                    }
+                    
                     if rooms.value.get(&id).is_none() {
                         tracing::info!("Stoping merge deamon for {id}");
                         break;
-                    }
-
-                    if let Err(err) = merge_changes(id, &pool).await {
-                        tracing::error!("Merge error for {id}: {err:?}");
                     }
                 }
             }
@@ -96,9 +105,6 @@ pub fn run_merge(id: Uuid, app_data: &AppData) {
 async fn merge_changes(doc_id: Uuid, pool: &PgPool) -> AppResult<()> {
     let mut tx = pool.begin().await?;
 
-    let doc_bytes = document_repository::read(doc_id, pool).await?;
-    let mut doc = AutoCommit::load(&doc_bytes)?;
-
     let changes_data = document_repository::get_change(doc_id, pool).await?;
     if changes_data.is_empty() {
         tracing::debug!("No new changes for {doc_id}");
@@ -107,12 +113,14 @@ async fn merge_changes(doc_id: Uuid, pool: &PgPool) -> AppResult<()> {
         return Ok(());
     }
 
+    let doc_bytes = document_repository::read(doc_id, pool).await?;
+    let mut doc = AutoCommit::load(&doc_bytes)?;
     let (ids, changes_bytes) = ChangeData::split_data(changes_data);
-    let mut peer_id = automerge::sync::State::new();
+    let mut state = automerge::sync::State::new();
 
     for bin in changes_bytes {
         let message = automerge::sync::Message::decode(&bin)?;
-        doc.sync().receive_sync_message(&mut peer_id, message)?
+        doc.sync().receive_sync_message(&mut state, message)?
     }
 
     document_repository::update(doc_id, doc.save(), &mut *tx).await?;
