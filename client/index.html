@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="light">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Lobby — CRDT Docs</title>
+        <link rel="stylesheet" href="/src/styles/main.css" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&family=Roboto:wght@400;500&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons"
+            rel="stylesheet"
+        />
+    </head>
+    <body>
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="brand">Co-Write</h1>
+                <p class="tag">Мінімалістичний редактор з синхронізацією</p>
+            </div>
+            <div class="theme-toggle">
+                <button id="toggleTheme">
+                    <span class="material-icons">dark_mode</span>
+                    Змінити тему
+                </button>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="centered-card lobby-card">
+                <h2 class="document-title">Створити новий документ</h2>
+                <div class="card-body">
+                    <label class="field">
+                        <input
+                            id="docName"
+                            type="text"
+                            placeholder="Введіть назву документа..."
+                            maxlength="120"
+                            autofocus
+                        />
+                    </label>
+
+                    <div class="row">
+                        <button id="createBtn" class="btn primary">
+                            <span class="material-icons">add</span>
+                            Створити документ
+                        </button>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <p>Посилання на документ буде згенеровано автоматично</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <small
+                >Працює з CRDT — WebSocket / WebRTC для реальної
+                синхронізації.</small
+            >
+        </footer>
+
+        <div id="toast" class="toast" aria-live="polite" hidden></div>
+
+        <script src="/src/utils/toogleThemes.js"></script>
+        <script src="/src/pages/index.js" type="module"></script>
+    </body>
+</html>
