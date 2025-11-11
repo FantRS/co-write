@@ -30,8 +30,7 @@ where
     let content = sqlx::query_scalar!(
         "SELECT content 
             FROM documents 
-            WHERE id = $1
-            ORDER BY id ASC",
+            WHERE id = $1",
         id
     )
     .fetch_one(executor)

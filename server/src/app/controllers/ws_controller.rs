@@ -35,7 +35,7 @@ pub async fn ws_handler(
     if let Err(err) =
         document_service::send_existing_changes(doc_id, &mut session, &app_data.pool).await
     {
-        tracing::error!("Failed to send axesting changes: {err}");
+        tracing::error!("Failed to send axisting changes: {err}");
         let _ = session.close(None).await;
 
         return Err(err);
