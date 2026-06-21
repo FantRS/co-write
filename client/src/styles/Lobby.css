@@ -1,0 +1,896 @@
+/*
+ * Lobby — Terminal OS Redesign
+ * Concept: Developer workspace that feels like an OS, not a SaaS template.
+ * Key ideas: aurora mouse-follow, typewriter greeting, terminal create prompt,
+ * editor-style tabs, file-card grid with colored accent bars.
+ */
+
+/* ── Root layout ─────────────────────────────────────────────────────────────── */
+
+.lb-root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #08080f;
+    position: relative;
+    overflow: hidden;
+    font-family: var(--font-sans);
+}
+
+/* ── Aurora / Background ─────────────────────────────────────────────────────── */
+
+.lb-aurora {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Mouse-following radial aurora */
+.lb-aurora-follow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        600px circle at var(--ax, 50%) var(--ay, 50%),
+        rgba(92, 72, 211, 0.06),
+        transparent 60%
+    );
+    transition: background 0.1s;
+}
+
+.lb-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(130, 100, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(130, 100, 255, 0.035) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 100% 100% at 50% 0%, black 20%, transparent 90%);
+}
+
+.lb-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    pointer-events: none;
+    will-change: transform;
+}
+
+.lb-orb--1 {
+    width: 700px;
+    height: 700px;
+    background: radial-gradient(circle, hsl(258, 80%, 32%) 0%, transparent 65%);
+    top: -300px;
+    left: -200px;
+    opacity: 0.22;
+    animation: lb-orb1 18s ease-in-out infinite alternate;
+}
+
+.lb-orb--2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, hsl(200, 85%, 28%) 0%, transparent 65%);
+    bottom: -200px;
+    right: -100px;
+    opacity: 0.18;
+    animation: lb-orb2 13s ease-in-out infinite alternate;
+}
+
+.lb-orb--3 {
+    width: 350px;
+    height: 350px;
+    background: radial-gradient(circle, hsl(330, 70%, 30%) 0%, transparent 65%);
+    top: 50%;
+    right: 20%;
+    opacity: 0.1;
+    animation: lb-orb3 20s ease-in-out infinite alternate;
+}
+
+@keyframes lb-orb1 {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(80px, 100px); }
+}
+@keyframes lb-orb2 {
+    from { transform: translate(0, 0); }
+    to   { transform: translate(-60px, -80px); }
+}
+@keyframes lb-orb3 {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(-40px, 60px) scale(1.15); }
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────────── */
+
+.lb-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    background: rgba(8, 8, 15, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    z-index: 100;
+}
+
+.lb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-code);
+    font-size: 13px;
+}
+
+.lb-brand-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, hsl(258, 80%, 55%), hsl(280, 75%, 45%));
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px rgba(92, 72, 211, 0.45);
+}
+
+.lb-brand-icon .material-icons {
+    font-size: 16px;
+    color: #fff;
+}
+
+.lb-brand-name {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    background: linear-gradient(135deg, #e2e8f0, hsl(258, 80%, 75%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.lb-brand-sep {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 18px;
+    font-weight: 300;
+}
+
+.lb-brand-path {
+    color: hsl(258, 70%, 70%);
+    font-size: 13px;
+    letter-spacing: 0;
+}
+
+.lb-header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.lb-header-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Stat pills ──────────────────────────────────────────────────────────────── */
+
+.lb-stat-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 20px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.lb-stat-icon {
+    font-size: 13px !important;
+    color: hsl(258, 70%, 65%);
+}
+
+.lb-stat-value {
+    font-weight: 700;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+}
+
+.lb-stat-label {
+    font-size: 11px;
+}
+
+/* ── Logout button ───────────────────────────────────────────────────────────── */
+
+.lb-logout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+}
+
+.lb-logout .material-icons { font-size: 15px; }
+
+.lb-logout:hover {
+    background: rgba(255, 85, 85, 0.08);
+    border-color: rgba(255, 85, 85, 0.25);
+    color: #ff8080;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────────── */
+
+.lb-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 80px 32px 80px;
+    position: relative;
+    z-index: 1;
+    gap: 48px;
+}
+
+/* ── Hero / Greeting ─────────────────────────────────────────────────────────── */
+
+.lb-hero {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 24px;
+    animation: lb-fade-up 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.lb-hero-terminal {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lb-term-line {
+    font-family: var(--font-code);
+    font-size: 28px;
+    font-weight: 500;
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    line-height: 1.3;
+}
+
+.lb-term-prompt {
+    color: hsl(258, 60%, 60%);
+    opacity: 0.7;
+}
+
+.lb-term-dollar {
+    color: hsl(142, 70%, 55%);
+    font-weight: 700;
+}
+
+.lb-term-cmd {
+    color: #e2e8f0;
+}
+
+.lb-term-result-line {
+    font-size: 36px;
+    font-weight: 700;
+    margin-top: 2px;
+    gap: 10px;
+}
+
+.lb-term-arrow {
+    color: hsl(258, 70%, 65%);
+    font-size: 28px;
+}
+
+.lb-term-result {
+    color: hsl(258, 60%, 60%);
+    letter-spacing: -1px;
+}
+
+.lb-term-cursor {
+    display: inline-block;
+    width: 3px;
+    height: 1.1em;
+    background: hsl(258, 80%, 70%);
+    border-radius: 2px;
+    margin-left: 3px;
+    vertical-align: text-bottom;
+    animation: lb-blink 1s step-end infinite;
+}
+
+@keyframes lb-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.lb-hero-sub {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 400;
+    padding-left: 2px;
+    letter-spacing: 0.01em;
+}
+
+@keyframes lb-fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Terminal Create ─────────────────────────────────────────────────────────── */
+
+.lb-create-section {
+    animation: lb-fade-up 0.6s 0.1s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+.lb-terminal-create {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.lb-terminal-create--focused {
+    border-color: rgba(130, 100, 255, 0.35);
+    box-shadow: 0 0 0 3px rgba(92, 72, 211, 0.08), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Mac-style traffic lights */
+.lb-tc-dots {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lb-tc-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.lb-tc-dot--red    { background: #ff5f57; }
+.lb-tc-dot--yellow { background: #febc2e; }
+.lb-tc-dot--green  { background: #28c840; }
+
+.lb-tc-bar {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    gap: 0;
+}
+
+.lb-tc-prompt {
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: hsl(258, 60%, 60%);
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.lb-tc-dollar {
+    font-family: var(--font-code);
+    font-size: 14px;
+    color: hsl(142, 70%, 55%);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.lb-tc-input-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+/* Hidden mirror span — identical font to input, measures text pixel width */
+.lb-tc-mirror {
+    position: absolute;
+    visibility: hidden;
+    white-space: pre;
+    font-family: var(--font-code);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: inherit;
+    pointer-events: none;
+    top: 0;
+    left: 0;
+}
+
+.lb-tc-block-cursor {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    /* Font must match input exactly so 1ch = one character width */
+    font-family: var(--font-code);
+    font-size: 14px;
+    font-weight: 700;
+    width: 1ch;
+    height: 1.15em;
+    background: #e2e8f0;
+    border-radius: 0;
+    pointer-events: none;
+    /* difference: over dark bg → cursor appears light; over light text → text appears dark (inverted) */
+    mix-blend-mode: difference;
+    animation: lb-block-blink 1.1s step-end infinite;
+}
+
+@keyframes lb-block-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.lb-tc-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: var(--font-code);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: inherit;
+    color: #e2e8f0;
+    caret-color: transparent;
+    min-width: 0;
+    padding-left: 1ch;
+}
+
+.lb-tc-input::placeholder {
+    color: rgba(255, 255, 255, 0.18);
+}
+
+.lb-tc-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.lb-tc-enter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 28px;
+    background: rgba(130, 100, 255, 0.15);
+    border: 1px solid rgba(130, 100, 255, 0.25);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.lb-tc-enter:hover {
+    background: rgba(130, 100, 255, 0.3);
+    border-color: rgba(130, 100, 255, 0.5);
+    transform: scale(1.05);
+}
+
+.lb-tc-enter-key {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    color: hsl(258, 80%, 75%);
+    line-height: 1;
+}
+
+.lb-tc-spinner {
+    font-size: 18px !important;
+    color: hsl(258, 70%, 65%);
+    animation: lb-spin 0.8s linear infinite;
+    margin-left: 8px;
+}
+
+.lb-tc-hint {
+    padding: 8px 20px 10px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.18);
+    font-family: var(--font-code);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    letter-spacing: 0.02em;
+}
+
+/* ── Projects section ────────────────────────────────────────────────────────── */
+
+.lb-projects-section {
+    display: flex;
+    flex-direction: column;
+    animation: lb-fade-up 0.6s 0.18s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+
+/* ── Editor tabs ─────────────────────────────────────────────────────────────── */
+
+.lb-editor-tabs {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.015);
+    gap: 0;
+}
+
+.lb-editor-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 20px;
+    height: 42px;
+    background: transparent;
+    border: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    font-family: var(--font-sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s, background 0.2s;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+.lb-editor-tab .material-icons {
+    font-size: 14px;
+}
+
+.lb-editor-tab:hover:not(.lb-editor-tab--active) {
+    color: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.lb-editor-tab--active {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Active top-line indicator (like VS Code) */
+.lb-editor-tab--active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(258, 80%, 60%), hsl(200, 80%, 60%));
+    border-radius: 0 0 2px 2px;
+}
+
+.lb-etab-badge {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.lb-editor-tab--active .lb-etab-badge {
+    background: rgba(130, 100, 255, 0.2);
+    color: hsl(258, 80%, 75%);
+}
+
+.lb-editor-tabs-fill {
+    flex: 1;
+    border-bottom: none;
+}
+
+/* ── Projects body ───────────────────────────────────────────────────────────── */
+
+.lb-projects-body {
+    padding: 28px 0 0;
+}
+
+/* ── File cards grid ─────────────────────────────────────────────────────────── */
+
+.lb-grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+    gap: 16px;
+}
+
+/* ── File card ───────────────────────────────────────────────────────────────── */
+
+.lb-file-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 0;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.34, 1.5, 0.64, 1),
+                border-color 0.25s,
+                box-shadow 0.25s;
+    animation: lb-card-in 0.5s var(--delay, 0ms) cubic-bezier(0.34, 1.4, 0.64, 1) both;
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes lb-card-in {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Mouse-tracked inner glow */
+.lb-fc-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(
+        180px circle at var(--cx, 50%) var(--cy, 50%),
+        rgba(255, 255, 255, 0.05),
+        transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.lb-file-card:hover {
+    transform: translateY(-5px) scale(1.015);
+    border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    box-shadow:
+        0 12px 36px rgba(0, 0, 0, 0.4),
+        0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
+        0 0 20px color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.lb-file-card:hover .lb-fc-glow {
+    opacity: 1;
+}
+
+/* Left accent bar */
+.lb-fc-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 12px 0 0 12px;
+    opacity: 0.6;
+    transition: opacity 0.25s, width 0.25s;
+}
+
+.lb-file-card:hover .lb-fc-bar {
+    opacity: 1;
+    width: 4px;
+}
+
+/* Path header */
+.lb-fc-path {
+    font-family: var(--font-code);
+    font-size: 11px;
+    padding: 14px 18px 10px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lb-fc-path-root {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.lb-fc-path-name {
+    color: color-mix(in srgb, var(--accent) 80%, white);
+    opacity: 0.8;
+}
+
+.lb-fc-path-ext {
+    color: rgba(255, 255, 255, 0.18);
+}
+
+/* Title */
+.lb-fc-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: #e2e8f0;
+    padding: 16px 18px 12px 20px;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.3px;
+}
+
+/* Fake code lines decoration */
+.lb-fc-lines {
+    padding: 0 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    z-index: 1;
+}
+
+.lb-fc-line {
+    display: block;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.055);
+    border-radius: 4px;
+}
+
+.lb-file-card:hover .lb-fc-line {
+    background: color-mix(in srgb, var(--accent) 15%, rgba(255,255,255,0.05));
+}
+
+/* Footer */
+.lb-fc-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 14px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    position: relative;
+    z-index: 1;
+    margin-top: auto;
+}
+
+.lb-fc-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.lb-fc-owner-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: color-mix(in srgb, var(--accent) 90%, white);
+    opacity: 0.8;
+}
+
+.lb-fc-owner-badge .material-icons {
+    font-size: 12px !important;
+}
+
+.lb-fc-date {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.25);
+    font-family: var(--font-code);
+}
+
+.lb-fc-open {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4);
+    transition: all 0.25s cubic-bezier(0.34, 1.5, 0.64, 1);
+    flex-shrink: 0;
+}
+
+.lb-file-card:hover .lb-fc-open {
+    background: var(--accent);
+    border-color: transparent;
+    color: #08080f;
+    transform: translateX(3px);
+}
+
+.lb-fc-open .material-icons {
+    font-size: 16px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+
+.lb-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 64px 24px;
+    color: rgba(255, 255, 255, 0.25);
+    text-align: center;
+}
+
+.lb-empty-prompt {
+    font-family: var(--font-code);
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 10px 20px;
+}
+
+.lb-empty-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.lb-spin {
+    animation: lb-spin 0.9s linear infinite;
+    font-size: 32px !important;
+}
+
+@keyframes lb-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── Status bar (VS Code style) ──────────────────────────────────────────────── */
+
+.lb-statusbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 24px;
+    background: hsl(258, 60%, 38%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    z-index: 100;
+    font-family: var(--font-code);
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.02em;
+}
+
+.lb-sb-left,
+.lb-sb-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lb-sb-branch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lb-sb-branch .material-icons {
+    font-size: 13px !important;
+}
+
+.lb-sb-sep {
+    opacity: 0.3;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .lb-header { padding: 0 16px; }
+    .lb-header-stats { display: none; }
+    .lb-body { padding: 72px 16px 60px; gap: 32px; }
+    .lb-term-line { font-size: 20px; }
+    .lb-term-result-line { font-size: 26px; }
+    .lb-grid-cards { grid-template-columns: 1fr; }
+    .lb-brand-path { display: none; }
+}

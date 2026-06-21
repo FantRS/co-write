@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8" />
+    <title>Перенаправлення — Co-Write</title>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+        if (id) {
+            window.location.replace("/#/editor?id=" + id);
+        } else {
+            window.location.replace("/#/");
+        }
+    </script>
+</head>
+<body>
+    <p style="font-family: sans-serif; text-align: center; margin-top: 50px; color: #555;">
+        Перенаправлення до спільного редактора...
+    </p>
+</body>
+</html>

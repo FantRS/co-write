@@ -1,0 +1,146 @@
+/* 
+ * Variables & Global Resets
+ * Contains design tokens (HSL colors, transitions, typography) and basic layout rules.
+ */
+
+:root {
+    /* Transitions */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Fonts */
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    --font-code: 'JetBrains Mono', monospace;
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.12);
+    --shadow-glow: 0 0 20px rgba(92, 72, 211, 0.15);
+}
+
+/* --- LIGHT THEME --- */
+[data-theme="light"] {
+    --bg-base: hsl(220, 30%, 96%);
+    --bg-surface: hsl(0, 0%, 100%);
+    --bg-surface-glass: rgba(255, 255, 255, 0.75);
+    --bg-surface-muted: hsl(220, 20%, 93%);
+    
+    --primary: hsl(250, 78%, 56%);
+    --primary-hover: hsl(250, 78%, 62%);
+    --primary-soft: hsl(250, 90%, 95%);
+    --primary-glow: rgba(92, 72, 211, 0.25);
+    
+    --success: hsl(142, 68%, 42%);
+    --success-hover: hsl(142, 68%, 36%);
+    --success-soft: hsl(142, 70%, 93%);
+    
+    --warning: hsl(38, 92%, 50%);
+    --error: hsl(0, 72%, 50%);
+    --error-soft: hsl(0, 80%, 95%);
+    
+    --text-core: hsl(220, 40%, 12%);
+    --text-primary: var(--text-core);
+    --text-muted: hsl(220, 15%, 45%);
+    --text-on-primary: hsl(0, 0%, 100%);
+    
+    --border-color: hsl(220, 15%, 87%);
+    --border-color-glow: hsl(250, 78%, 85%);
+    --divider: rgba(17, 24, 39, 0.08);
+
+    --scroll-track: hsl(220, 20%, 94%);
+    --scroll-thumb: hsl(220, 10%, 80%);
+    --scroll-thumb-hover: hsl(220, 10%, 70%);
+
+    --glass-blur: 16px;
+    --glass-border: rgba(255, 255, 255, 0.4);
+
+    --editor-gutter-bg: hsl(220, 20%, 96%);
+    --editor-gutter-text: hsl(220, 10%, 60%);
+    --editor-active-line: hsl(250, 90%, 98%);
+}
+
+/* --- DARK THEME (DRACULA THEME AS IN SOLANA PLAYGROUND) --- */
+[data-theme="dark"] {
+    --bg-base: #282a36; /* Dracula Base Background */
+    --bg-surface: #1e1f29; /* Dracula Sidebar/Surface */
+    --bg-surface-glass: rgba(30, 31, 41, 0.75);
+    --bg-surface-muted: #181920; /* Darker Surface */
+    
+    --primary: #bd93f9; /* Dracula Purple */
+    --primary-hover: #d6bdfa;
+    --primary-soft: rgba(189, 147, 249, 0.15);
+    --primary-glow: rgba(189, 147, 249, 0.35);
+    
+    --success: #50fa7b; /* Dracula Green */
+    --success-hover: #7dfc9d;
+    --success-soft: rgba(80, 250, 123, 0.15);
+    
+    --warning: #ffb86c; /* Dracula Orange */
+    --error: #ff5555; /* Dracula Red */
+    --error-soft: rgba(255, 85, 85, 0.15);
+    
+    --text-core: #f8f8f2; /* Dracula Foreground */
+    --text-primary: var(--text-core);
+    --text-muted: #6272a4; /* Dracula Comments / Muted text */
+    --text-on-primary: #1e1f29; /* Dark text on light accent background */
+    
+    --border-color: #343746; /* Selection / Border color */
+    --border-color-glow: #bd93f9; /* Active border purple */
+    --divider: rgba(52, 55, 70, 0.6);
+
+    --scroll-track: #1e1f29;
+    --scroll-thumb: #44475a;
+    --scroll-thumb-hover: #6272a4;
+
+    --glass-blur: 20px;
+    --glass-border: rgba(255, 255, 255, 0.04);
+
+    --editor-gutter-bg: #282a36; /* Editor gutter matches editor background */
+    --editor-gutter-text: #6272a4;
+    --editor-active-line: rgba(68, 71, 90, 0.15); /* Subtle transparent active line highlight */
+}
+
+/* --- RESET STYLES --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body, #root {
+    height: 100%;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-base);
+    color: var(--text-core);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--scroll-track);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--scroll-thumb-hover);
+}
+
+.material-icons {
+    font-size: 20px;
+    vertical-align: middle;
+}

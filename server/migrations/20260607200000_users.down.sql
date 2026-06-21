@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS project_files;
+DROP TABLE IF EXISTS document_members;
+ALTER TABLE documents DROP COLUMN IF EXISTS owner_id;
+DROP TABLE IF EXISTS users;
