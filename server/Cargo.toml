@@ -46,7 +46,6 @@ tar = "0.4"
 xz2 = "0.1"
 rand = "0.8"
 
-# Pin transitive dependencies for compatibility with rustc 1.85 inside Docker container
 time = "=0.3.36"
 darling = "=0.20.10"
 
